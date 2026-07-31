@@ -50,6 +50,9 @@ export default async function BoardPage({
           <div className="font-semibold text-sm">{project.name}</div>
           <div className="text-xs text-slate-500">{project.clients?.name}</div>
         </div>
+        <Link href="/ideas" className="text-sm text-slate-500 hover:text-slate-800">
+          Ideas de proyecto
+        </Link>
         <form action="/logout" method="post">
           <button className="text-sm text-slate-500 hover:underline" type="submit">
             Cerrar sesión
@@ -60,6 +63,7 @@ export default async function BoardPage({
         projectId={project.id}
         currentUserId={user.id}
         currentUserName={profile.full_name || profile.email || 'Sin nombre'}
+        isAdmin={isAdmin}
       />
     </div>
   );

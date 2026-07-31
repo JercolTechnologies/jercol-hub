@@ -82,11 +82,16 @@ export default async function Home() {
       <div className="w-full max-w-md">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-lg font-semibold">Tus proyectos</h1>
-          <form action="/logout" method="post">
-            <button className="text-sm text-slate-500 hover:underline" type="submit">
-              Cerrar sesión
-            </button>
-          </form>
+          <div className="flex items-center gap-4">
+            <Link href="/ideas" className="text-sm text-slate-500 hover:underline">
+              Ideas de proyecto
+            </Link>
+            <form action="/logout" method="post">
+              <button className="text-sm text-slate-500 hover:underline" type="submit">
+                Cerrar sesión
+              </button>
+            </form>
+          </div>
         </div>
         {(!projects || projects.length === 0) && (
           <p className="text-sm text-slate-500">

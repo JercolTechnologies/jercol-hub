@@ -45,3 +45,9 @@ export async function assignUser(formData: FormData) {
   await supabase.from('profiles').update({ client_id: clientId }).eq('id', userId);
   revalidatePath('/admin');
 }
+
+export async function setClientArchived(clientId: string, archived: boolean) {
+  const supabase = await requireAdmin();
+  await supabase.from('clients').update({ archived }).eq('id', clientId);
+  revalidatePath('/admin');
+}
