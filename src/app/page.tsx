@@ -21,7 +21,26 @@ export default async function Home() {
     .single<Profile>();
 
   if (!profile) {
-    redirect('/login');
+    // No redirigir a /login aquí: el usuario ya está autenticado, así que el
+    // middleware lo rebotaría de vuelta a "/" y quedaría en loop infinito.
+    // Esto pasa si el trigger que crea el perfil no corrió para esta cuenta
+    // (p. ej. se registró antes de que existiera el trigger en Supabase).
+    return (
+      <div className="flex flex-1 items-center justify-center px-4">
+        <div className="max-w-sm text-center">
+          <h1 className="text-lg font-semibold mb-2">No se encontró tu perfil</h1>
+          <p className="text-sm text-slate-500 mb-4">
+            Tu cuenta existe pero no tiene un perfil asociado en la base de datos.
+            Contacta al administrador para que lo revise.
+          </p>
+          <form action="/logout" method="post">
+            <button className="text-sm text-blue-600 hover:underline" type="submit">
+              Cerrar sesión
+            </button>
+          </form>
+        </div>
+      </div>
+    );
   }
 
   if (profile.role === 'admin') {
