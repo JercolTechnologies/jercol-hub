@@ -11,6 +11,7 @@ import {
   type Comment,
   type DatePreset,
   type Ticket,
+  type TicketStaging,
   type TicketStatus,
   type TicketType,
   type TicketPriority,
@@ -113,6 +114,12 @@ export default function BoardClient({
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [uploading, setUploading] = useState(false);
 
+  // Links de staging por ticket. La RLS de ticket_staging decide qué llega:
+  // el admin recibe todos, el cliente solo los de tarjetas en revisión/hecho.
+  const [staging, setStaging] = useState<Record<string, string>>({});
+  const [editingStaging, setEditingStaging] = useState(false);
+  const [stagingInput, setStagingInput] = useState('');
+
   const loadTickets = useCallback(async () => {
     // El nombre explícito de la FK (tickets_created_by_fkey) es obligatorio:
     // attachments y ticket_reads también unen tickets<->profiles, así que sin
@@ -142,6 +149,17 @@ export default function BoardClient({
           map[r.ticket_id as string] = r.last_seen_at as string;
         });
         setReads(map);
+
+        const { data: stagingRows } = await supabase
+          .from('ticket_staging')
+          .select('ticket_id, url')
+          .in('ticket_id', ids)
+          .returns<TicketStaging[]>();
+        const smap: Record<string, string> = {};
+        (stagingRows || []).forEach((s) => {
+          smap[s.ticket_id] = s.url;
+        });
+        setStaging(smap);
       }
     }
   }, [projectId, supabase, currentUserId]);
@@ -202,6 +220,9 @@ export default function BoardClient({
           if (current) loadAttachments(current.id);
           return current;
         });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ticket_staging' }, () => {
+        loadTickets();
       })
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') setLive('on');
@@ -324,6 +345,51 @@ export default function BoardClient({
     loadTickets();
   }
 
+  async function saveStaging() {
+    if (!openTicket) return;
+    const raw = stagingInput.trim();
+
+    if (!raw) {
+      const { error } = await supabase.from('ticket_staging').delete().eq('ticket_id', openTicket.id);
+      if (error) {
+        alert('No se pudo quitar el link: ' + error.message);
+        return;
+      }
+      setStaging((prev) => {
+        const next = { ...prev };
+        delete next[openTicket.id];
+        return next;
+      });
+      setEditingStaging(false);
+      return;
+    }
+
+    let parsed: URL;
+    try {
+      parsed = new URL(raw);
+    } catch {
+      alert('Ese link no es una URL válida. Incluye https:// al inicio.');
+      return;
+    }
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      alert('El link debe empezar con http:// o https://');
+      return;
+    }
+
+    const { error } = await supabase.from('ticket_staging').upsert({
+      ticket_id: openTicket.id,
+      url: parsed.toString(),
+      updated_by: currentUserId,
+      updated_at: new Date().toISOString(),
+    });
+    if (error) {
+      alert('No se pudo guardar el link: ' + error.message);
+      return;
+    }
+    setStaging((prev) => ({ ...prev, [openTicket.id]: parsed.toString() }));
+    setEditingStaging(false);
+  }
+
   async function sendComment() {
     if (!newComment.trim() || !openTicket) return;
     const { error } = await supabase.from('comments').insert({
@@ -383,6 +449,8 @@ export default function BoardClient({
   function openDetail(t: Ticket) {
     setOpenTicket(t);
     setEditing(false);
+    setEditingStaging(false);
+    setStagingInput(staging[t.id] || '');
     loadComments(t.id);
     loadAttachments(t.id);
     markRead(t.id);
@@ -451,6 +519,18 @@ export default function BoardClient({
                       <span className={`text-[11px] px-1.5 py-0.5 rounded font-semibold ${PRIORITY_COLOR[t.priority]}`}>
                         {PRIORITY_LABEL[t.priority]}
                       </span>
+                      {staging[t.id] && (
+                        <a
+                          href={staging[t.id]}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          title="Abrir preview"
+                          className="text-[11px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        >
+                          🔗 Preview
+                        </a>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -657,6 +737,71 @@ export default function BoardClient({
                     </button>
                   )}
                 </div>
+
+                {(isAdmin || staging[openTicket.id]) && (
+                  <div className="border-t border-slate-200 pt-3 mb-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
+                        Link de preview
+                        {isAdmin && (
+                          <InfoTip text="Solo tú puedes ponerlo. El cliente lo ve únicamente cuando la tarjeta llega a En Revisión o Hecho." />
+                        )}
+                      </label>
+                      {isAdmin && !editingStaging && (
+                        <button
+                          className="text-xs text-blue-600 hover:underline"
+                          onClick={() => {
+                            setStagingInput(staging[openTicket.id] || '');
+                            setEditingStaging(true);
+                          }}
+                        >
+                          {staging[openTicket.id] ? 'Cambiar' : '+ Agregar'}
+                        </button>
+                      )}
+                    </div>
+
+                    {editingStaging ? (
+                      <div className="flex gap-2">
+                        <input
+                          type="url"
+                          className="flex-1 rounded border border-slate-300 px-3 py-1.5 text-sm"
+                          placeholder="https://mi-proyecto.vercel.app"
+                          value={stagingInput}
+                          onChange={(e) => setStagingInput(e.target.value)}
+                        />
+                        <button
+                          className="text-sm px-3 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700"
+                          onClick={saveStaging}
+                        >
+                          Guardar
+                        </button>
+                        <button
+                          className="text-sm px-2 py-1.5 rounded border border-slate-300"
+                          onClick={() => setEditingStaging(false)}
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    ) : staging[openTicket.id] ? (
+                      <a
+                        href={staging[openTicket.id]}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:underline break-all"
+                      >
+                        🔗 {staging[openTicket.id]}
+                      </a>
+                    ) : (
+                      <div className="text-xs text-slate-400">Sin link todavía.</div>
+                    )}
+
+                    {isAdmin && editingStaging && (
+                      <div className="text-[11px] text-slate-400 mt-1">
+                        Deja el campo vacío y guarda para quitar el link.
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="border-t border-slate-200 pt-3">
                   <div className="flex items-center justify-between mb-2">

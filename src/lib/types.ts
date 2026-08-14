@@ -51,6 +51,13 @@ export interface Ticket {
   author?: { full_name: string | null } | null;
 }
 
+export interface TicketStaging {
+  ticket_id: string;
+  url: string;
+  updated_by: string | null;
+  updated_at: string;
+}
+
 export interface Comment {
   id: string;
   ticket_id: string;
