@@ -114,13 +114,21 @@ export default function BoardClient({
   const [uploading, setUploading] = useState(false);
 
   const loadTickets = useCallback(async () => {
+    // El nombre explícito de la FK (tickets_created_by_fkey) es obligatorio:
+    // attachments y ticket_reads también unen tickets<->profiles, así que sin
+    // desambiguar PostgREST responde 300 (PGRST201, embed ambiguo).
     const { data, error } = await supabase
       .from('tickets')
-      .select('*, author:profiles(full_name)')
+      .select('*, author:profiles!tickets_created_by_fkey(full_name)')
       .eq('project_id', projectId)
       .order('created_at', { ascending: true })
       .returns<Ticket[]>();
-    if (!error && data) {
+    if (error) {
+      console.error('Error cargando tarjetas:', error);
+      alert('No se pudieron cargar las tarjetas: ' + error.message);
+      return;
+    }
+    if (data) {
       setTickets(data);
       const ids = data.map((t) => t.id);
       if (ids.length) {
@@ -142,11 +150,16 @@ export default function BoardClient({
     async (ticketId: string) => {
       const { data, error } = await supabase
         .from('comments')
-        .select('*, author:profiles(full_name)')
+        .select('*, author:profiles!comments_author_id_fkey(full_name)')
         .eq('ticket_id', ticketId)
         .order('created_at', { ascending: true })
         .returns<Comment[]>();
-      if (!error && data) setComments(data);
+      if (error) {
+        console.error('Error cargando comentarios:', error);
+        alert('No se pudieron cargar los comentarios: ' + error.message);
+        return;
+      }
+      if (data) setComments(data);
     },
     [supabase]
   );
@@ -159,7 +172,11 @@ export default function BoardClient({
         .eq('ticket_id', ticketId)
         .order('created_at', { ascending: true })
         .returns<Attachment[]>();
-      if (!error && data) setAttachments(data);
+      if (error) {
+        console.error('Error cargando adjuntos:', error);
+        return;
+      }
+      if (data) setAttachments(data);
     },
     [supabase]
   );
@@ -278,7 +295,7 @@ export default function BoardClient({
     loadTickets();
     const { data } = await supabase
       .from('tickets')
-      .select('*, author:profiles(full_name)')
+      .select('*, author:profiles!tickets_created_by_fkey(full_name)')
       .eq('id', openTicket.id)
       .single<Ticket>();
     if (data) setOpenTicket(data);

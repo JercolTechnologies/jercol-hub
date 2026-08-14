@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import type { Profile, ProjectIdea, ProjectIdeaComment } from '@/lib/types';
 import { addIdeaComment, setIdeaStatus, convertIdeaToProject } from '../actions';
+import IdeaAttachments from '@/components/IdeaAttachments';
 
 export default async function IdeaDetailPage({
   params,
@@ -34,9 +35,12 @@ export default async function IdeaDetailPage({
 
   if (!idea) redirect('/ideas');
 
+  // FK explícita a propósito: idea_attachments abre otro camino entre
+  // project_ideas y profiles, y sin nombrarla PostgREST puede responder 300
+  // (PGRST201, embed ambiguo) y fallar en silencio.
   const { data: comments } = await supabase
     .from('project_idea_comments')
-    .select('*, author:profiles(full_name)')
+    .select('*, author:profiles!project_idea_comments_author_id_fkey(full_name)')
     .eq('idea_id', ideaId)
     .order('created_at', { ascending: true })
     .returns<ProjectIdeaComment[]>();
@@ -92,6 +96,13 @@ export default async function IdeaDetailPage({
             </form>
           </div>
         )}
+
+        <IdeaAttachments
+          ideaId={idea.id}
+          currentUserId={user.id}
+          isAdmin={isAdmin}
+          canUpload={isAdmin || idea.status !== 'convertida'}
+        />
 
         <div className="border-t border-slate-200 pt-4 space-y-3">
           {comments?.map((c) => (

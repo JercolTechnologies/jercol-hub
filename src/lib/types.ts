@@ -71,6 +71,17 @@ export interface Attachment {
   created_at: string;
 }
 
+export interface IdeaAttachment {
+  id: string;
+  idea_id: string;
+  uploaded_by: string | null;
+  storage_path: string;
+  file_name: string;
+  size_bytes: number | null;
+  content_type: string | null;
+  created_at: string;
+}
+
 export type IdeaStatus = 'nueva' | 'en_conversacion' | 'convertida' | 'descartada';
 
 export interface ProjectIdea {
