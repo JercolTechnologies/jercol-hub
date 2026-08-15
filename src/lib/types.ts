@@ -35,7 +35,26 @@ export interface ClientContact {
   email: string | null;
   role_label: string | null;
   is_legal_rep: boolean;
+  profile_id: string | null;
   created_at: string;
+}
+
+export type SignerRole = 'jercol' | 'cliente';
+
+export interface ContractSignature {
+  id: string;
+  contract_id: string;
+  signer_role: SignerRole;
+  profile_id: string | null;
+  contact_id: string | null;
+  version_id: string | null;
+  full_name: string;
+  document_id: string;
+  signature_path: string | null;
+  document_sha256: string | null;
+  ip: string | null;
+  user_agent: string | null;
+  signed_at: string;
 }
 
 export type ContractStatus =
@@ -53,6 +72,8 @@ export interface Contract {
   status: ContractStatus;
   signer_contact_id: string | null;
   poder_path: string | null;
+  signed_path: string | null;
+  signed_at: string | null;
   created_by: string | null;
   created_at: string;
   clients?: { name: string } | null;

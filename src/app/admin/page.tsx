@@ -10,6 +10,7 @@ import {
   addContact,
   deleteContact,
   setProjectStatus,
+  linkContactProfile,
 } from './actions';
 
 type ProjectWithClient = Project & { clients: { name: string } | null };
@@ -65,6 +66,22 @@ export default async function AdminPage() {
     const list = contactsByClient.get(c.client_id) || [];
     list.push(c);
     contactsByClient.set(c.client_id, list);
+  });
+
+  // Cuentas ya asignadas a un cliente, para poder vincularlas a un contacto.
+  const { data: assignedUsers } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('role', 'client')
+    .not('client_id', 'is', null)
+    .returns<Profile[]>();
+
+  const usersByClient = new Map<string, Profile[]>();
+  (assignedUsers || []).forEach((u) => {
+    if (!u.client_id) return;
+    const list = usersByClient.get(u.client_id) || [];
+    list.push(u);
+    usersByClient.set(u.client_id, list);
   });
 
   function ClientCard({ c }: { c: ClientRow }) {
@@ -133,30 +150,65 @@ export default async function AdminPage() {
             )}
           </summary>
 
-          <ul className="space-y-1 mt-2 mb-3">
+          <ul className="space-y-3 mt-2 mb-3">
             {(contactsByClient.get(c.id) || []).map((ct) => (
-              <li key={ct.id} className="flex items-center gap-2 text-sm">
-                <span>{ct.full_name}</span>
-                {ct.is_legal_rep && (
-                  <span className="text-[11px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold">
-                    Rep. legal
-                  </span>
-                )}
-                {ct.role_label && <span className="text-xs text-slate-400">{ct.role_label}</span>}
-                {ct.phone && (
-                  <a
-                    href={`https://wa.me/${ct.phone}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-emerald-600 hover:underline"
+              <li key={ct.id} className="text-sm">
+                <div className="flex items-center gap-2">
+                  <span>{ct.full_name}</span>
+                  {ct.is_legal_rep && (
+                    <span className="text-[11px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold">
+                      Rep. legal
+                    </span>
+                  )}
+                  {ct.role_label && <span className="text-xs text-slate-400">{ct.role_label}</span>}
+                  {ct.phone && (
+                    <a
+                      href={`https://wa.me/${ct.phone}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-emerald-600 hover:underline"
+                    >
+                      WhatsApp
+                    </a>
+                  )}
+                  <form action={deleteContact.bind(null, ct.id)} className="ml-auto">
+                    <button
+                      type="submit"
+                      className="text-[11px] text-red-500 hover:underline cursor-pointer"
+                    >
+                      eliminar
+                    </button>
+                  </form>
+                </div>
+
+                <form
+                  action={linkContactProfile.bind(null, ct.id)}
+                  className="flex items-center gap-2 mt-1"
+                >
+                  <span className="text-[11px] text-slate-400">Cuenta:</span>
+                  <select
+                    name="profile_id"
+                    defaultValue={ct.profile_id || ''}
+                    className="text-xs rounded border border-slate-300 px-1.5 py-1"
                   >
-                    WhatsApp
-                  </a>
-                )}
-                <form action={deleteContact.bind(null, ct.id)} className="ml-auto">
-                  <button type="submit" className="text-[11px] text-red-500 hover:underline">
-                    eliminar
+                    <option value="">Sin vincular</option>
+                    {(usersByClient.get(c.id) || []).map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.full_name || u.email}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="submit"
+                    className="text-[11px] text-blue-600 hover:underline cursor-pointer"
+                  >
+                    vincular
                   </button>
+                  {!ct.profile_id && ct.is_legal_rep && (
+                    <span className="text-[11px] text-amber-600">
+                      sin cuenta vinculada no puede firmar
+                    </span>
+                  )}
                 </form>
               </li>
             ))}

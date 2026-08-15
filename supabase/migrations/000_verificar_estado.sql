@@ -44,6 +44,17 @@ select
        and to_regclass('public.contract_addenda') is not null
        then 'OK' else 'FALTA' end
 
+union all
+select
+  '006_contratos_firma',
+  case when to_regclass('public.contract_signatures') is not null
+       and exists (
+         select 1 from information_schema.columns
+         where table_schema = 'public' and table_name = 'client_contacts'
+           and column_name = 'profile_id'
+       )
+       then 'OK' else 'FALTA' end
+
 order by migracion;
 
 

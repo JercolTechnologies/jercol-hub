@@ -6,6 +6,7 @@ import FileField from '@/components/FileField';
 import FileUploadForm from '@/components/FileUploadForm';
 import InfoTip from '@/components/InfoTip';
 import RealtimeRefresh from '@/components/RealtimeRefresh';
+import SignContractForm from '@/components/SignContractForm';
 import {
   ADDENDUM_CHANNEL_LABEL,
   CONTRACT_STATUS_LABEL,
@@ -13,6 +14,7 @@ import {
   type Contract,
   type ContractAddendum,
   type ContractComment,
+  type ContractSignature,
   type ContractStatus,
   type ContractVersion,
   type Profile,
@@ -27,7 +29,14 @@ import {
   deleteContract,
   addContractComment,
   addAddendum,
+  signContract,
 } from '../actions';
+
+const DISCLAIMER_JERCOL =
+  'Declaro que soy quien dice ser y que firmo este contrato en nombre de Jercol Technologies.';
+
+const DISCLAIMER_CLIENTE =
+  'Declaro que soy el representante legal (o su apoderado debidamente facultado) y que estoy autorizado para firmar este contrato. Entiendo que Jercol Technologies no responde por firmas realizadas por terceros no autorizados desde esta cuenta.';
 
 // Sin caché: el estado del contrato cambia desde dos cuentas distintas y
 // tiene que verse al instante en ambas.
@@ -124,6 +133,12 @@ export default async function ContractDetailPage({
         .eq('contract_id', contractId),
     ]);
 
+  const { data: signatures } = await supabase
+    .from('contract_signatures')
+    .select('*')
+    .eq('contract_id', contractId)
+    .returns<ContractSignature[]>();
+
   // Para poder reasignar qué proyectos cubre el contrato (solo admin).
   const { data: clientProjects } = isAdmin
     ? await supabase
@@ -144,6 +159,15 @@ export default async function ContractDetailPage({
 
   const addComment = addContractComment.bind(null, contractId);
 
+  const sigList = signatures || [];
+  const signedByJercol = sigList.some((s) => s.signer_role === 'jercol');
+  // Solo la cuenta vinculada al contacto designado puede firmar por el cliente.
+  const canClientSign =
+    !isAdmin &&
+    contract.status === 'firmado_jercol' &&
+    !!signer?.profile_id &&
+    signer.profile_id === user.id;
+
   return (
     <div className="flex-1 max-w-2xl mx-auto w-full px-4 py-8">
       <Link href="/contratos" className="text-sm text-slate-500 hover:underline">
@@ -152,7 +176,13 @@ export default async function ContractDetailPage({
 
       <RealtimeRefresh
         channel={`contract-${contractId}`}
-        tables={['contracts', 'contract_versions', 'contract_comments', 'contract_addenda']}
+        tables={[
+          'contracts',
+          'contract_versions',
+          'contract_comments',
+          'contract_addenda',
+          'contract_signatures',
+        ]}
       />
 
       <div className="bg-white border border-slate-200 rounded-lg p-5 mt-4">
@@ -317,7 +347,7 @@ export default async function ContractDetailPage({
             </div>
           ))}
 
-          {isAdmin && (
+          {isAdmin && contract.status !== 'vigente' && (
             <div className="mt-3">
               <FileUploadForm
                 action={uploadVersion.bind(null, contractId)}
@@ -329,7 +359,93 @@ export default async function ContractDetailPage({
               />
             </div>
           )}
+          {isAdmin && contract.status === 'vigente' && (
+            <div className="text-[11px] text-slate-400 mt-2">
+              El contrato está firmado: ya no se pueden subir versiones nuevas.
+            </div>
+          )}
         </div>
+
+        {/* ---------- Firmas ---------- */}
+        {(contract.status === 'aprobado' ||
+          contract.status === 'firmado_jercol' ||
+          contract.status === 'vigente') && (
+          <div className="border-t border-slate-100 pt-4 mb-4">
+            <label className="text-xs font-semibold text-slate-500 flex items-center gap-1.5 mb-2">
+              Firmas
+              <InfoTip text="Firma primero Jercol y después el firmante autorizado del cliente. Al completarse ambas, se genera el PDF final con el certificado de firma." />
+            </label>
+
+            {sigList.length === 0 && (
+              <div className="text-sm text-slate-400 mb-2">Sin firmas todavía.</div>
+            )}
+
+            <ul className="space-y-2 mb-3">
+              {sigList
+                .slice()
+                .sort((a, b) => (a.signer_role === 'jercol' ? -1 : 1))
+                .map((s) => (
+                  <li key={s.id} className="text-sm border-l-2 border-emerald-200 pl-3">
+                    <div className="font-medium">
+                      {s.signer_role === 'jercol' ? 'Jercol Technologies' : 'Cliente'} ·{' '}
+                      {s.full_name}
+                    </div>
+                    <div className="text-[11px] text-slate-400">
+                      Doc. {s.document_id} · {fmtDate(s.signed_at)}
+                      {s.ip ? ` · IP ${s.ip}` : ''}
+                    </div>
+                  </li>
+                ))}
+            </ul>
+
+            {contract.status === 'vigente' && contract.signed_path && (
+              <div className="bg-emerald-50 rounded px-3 py-2">
+                <ContractFileLink
+                  path={contract.signed_path}
+                  label="Descargar contrato firmado (con certificado)"
+                  className="text-sm text-emerald-700 font-medium hover:underline cursor-pointer"
+                />
+              </div>
+            )}
+
+            {isAdmin && contract.status === 'aprobado' && !signedByJercol && (
+              <SignContractForm
+                action={signContract.bind(null, contractId)}
+                heading="Firmar como Jercol Technologies"
+                disclaimer={DISCLAIMER_JERCOL}
+              />
+            )}
+
+            {canClientSign && (
+              <SignContractForm
+                action={signContract.bind(null, contractId)}
+                defaultName={signer?.full_name || profile.full_name || ''}
+                heading="Firmar contrato"
+                disclaimer={DISCLAIMER_CLIENTE}
+              />
+            )}
+
+            {!isAdmin && contract.status === 'firmado_jercol' && !canClientSign && (
+              <div className="text-xs bg-amber-50 text-amber-800 rounded px-3 py-2">
+                Este contrato debe firmarlo el representante legal designado. Si eres tú, pide que
+                vinculen tu cuenta al contacto correspondiente.
+              </div>
+            )}
+
+            {isAdmin && contract.status === 'firmado_jercol' && (
+              <div className="text-xs text-slate-500">
+                Ya firmaste. Falta la firma del cliente.
+                {!signer?.profile_id && (
+                  <span className="text-amber-600">
+                    {' '}
+                    El firmante designado no tiene cuenta vinculada, así que todavía no puede
+                    firmar.
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ---------- Acciones de estado ---------- */}
         <div className="border-t border-slate-100 pt-4 mb-4 flex flex-wrap gap-2 items-center">
@@ -350,13 +466,16 @@ export default async function ContractDetailPage({
               </button>
             </form>
           )}
-          {isAdmin && contract.status !== 'anulado' && contract.status !== 'borrador' && (
-            <form action={setContractStatus.bind(null, contractId, 'anulado')}>
-              <button className="text-sm px-3 py-1.5 rounded border border-slate-300 hover:bg-slate-50 cursor-pointer">
-                Anular
-              </button>
-            </form>
-          )}
+          {isAdmin &&
+            contract.status !== 'anulado' &&
+            contract.status !== 'borrador' &&
+            contract.status !== 'vigente' && (
+              <form action={setContractStatus.bind(null, contractId, 'anulado')}>
+                <button className="text-sm px-3 py-1.5 rounded border border-slate-300 hover:bg-slate-50 cursor-pointer">
+                  Anular
+                </button>
+              </form>
+            )}
           {isAdmin && (
             <form action={deleteContract.bind(null, contractId)} className="ml-auto">
               <button className="text-xs text-red-600 hover:underline cursor-pointer">

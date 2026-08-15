@@ -1,9 +1,13 @@
 'use server';
 
+import { createHash } from 'crypto';
 import { revalidatePath } from 'next/cache';
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import type { ContractStatus } from '@/lib/types';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { buildSignedPdf, type SignatureRecord } from '@/lib/pdf/certificacion';
+import type { ContractStatus, SignerRole } from '@/lib/types';
 
 async function requireUser() {
   const supabase = await createClient();
@@ -172,6 +176,188 @@ export async function deleteContract(contractId: string) {
 
   revalidatePath('/contratos');
   redirect('/contratos');
+}
+
+// ---------------------------------------------------------------------
+// Firma
+// ---------------------------------------------------------------------
+
+function dataUrlToBytes(dataUrl: string): { bytes: Uint8Array; mime: string } | null {
+  const match = /^data:(image\/(?:png|jpeg));base64,(.+)$/.exec(dataUrl);
+  if (!match) return null;
+  return { mime: match[1], bytes: new Uint8Array(Buffer.from(match[2], 'base64')) };
+}
+
+async function getRequestTrace() {
+  const h = await headers();
+  // En Vercel la IP real llega en x-forwarded-for; el primer valor es el cliente.
+  const forwarded = h.get('x-forwarded-for');
+  const ip = forwarded ? forwarded.split(',')[0].trim() : h.get('x-real-ip');
+  return { ip: ip || null, userAgent: h.get('user-agent') };
+}
+
+export async function signContract(contractId: string, formData: FormData) {
+  const { supabase, user, profile } = await requireUser();
+
+  const fullName = String(formData.get('full_name') || '').trim();
+  const documentId = String(formData.get('document_id') || '').trim();
+  const signatureData = String(formData.get('signature_data') || '');
+  if (!fullName || !documentId) return;
+
+  const { data: contract } = await supabase
+    .from('contracts')
+    .select('*')
+    .eq('id', contractId)
+    .single();
+  if (!contract) return;
+
+  const isAdmin = profile.role === 'admin';
+  const role: SignerRole = isAdmin ? 'jercol' : 'cliente';
+
+  // ---- Orden y autorización ----
+  // Jercol firma primero (desde 'aprobado'), el cliente después.
+  if (isAdmin && contract.status !== 'aprobado') return;
+
+  if (!isAdmin) {
+    if (contract.status !== 'firmado_jercol') return;
+    if (contract.client_id !== profile.client_id) return;
+
+    // Solo la cuenta vinculada al contacto designado como firmante.
+    const { data: signerContact } = await supabase
+      .from('client_contacts')
+      .select('id, profile_id')
+      .eq('id', contract.signer_contact_id)
+      .maybeSingle();
+
+    if (!signerContact || signerContact.profile_id !== user.id) return;
+  }
+
+  // La versión vigente es la que se firma.
+  const { data: version } = await supabase
+    .from('contract_versions')
+    .select('*')
+    .eq('contract_id', contractId)
+    .order('version_number', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!version) return;
+
+  const admin = createAdminClient();
+
+  // Huella del PDF tal como está al momento de firmar.
+  const { data: fileBlob, error: dlErr } = await admin.storage
+    .from('contracts')
+    .download(version.storage_path);
+  if (dlErr || !fileBlob) {
+    console.error('signContract download:', dlErr);
+    return;
+  }
+  const originalBytes = new Uint8Array(await fileBlob.arrayBuffer());
+  const sha256 = createHash('sha256').update(originalBytes).digest('hex');
+
+  // Imagen de la firma (opcional: el valor probatorio está en el rastro).
+  let signaturePath: string | null = null;
+  const parsed = signatureData ? dataUrlToBytes(signatureData) : null;
+  if (parsed) {
+    const ext = parsed.mime === 'image/jpeg' ? 'jpg' : 'png';
+    const path = `${contractId}/firmas/${role}-${Date.now()}.${ext}`;
+    const { error } = await admin.storage
+      .from('contracts')
+      .upload(path, parsed.bytes, { contentType: parsed.mime });
+    if (error) console.error('signContract signature upload:', error);
+    else signaturePath = path;
+  }
+
+  const trace = await getRequestTrace();
+
+  const { error: sigErr } = await admin.from('contract_signatures').insert({
+    contract_id: contractId,
+    signer_role: role,
+    profile_id: user.id,
+    contact_id: isAdmin ? null : contract.signer_contact_id,
+    version_id: version.id,
+    full_name: fullName,
+    document_id: documentId,
+    signature_path: signaturePath,
+    document_sha256: sha256,
+    ip: trace.ip,
+    user_agent: trace.userAgent,
+  });
+
+  if (sigErr) {
+    console.error('signContract insert:', sigErr);
+    return;
+  }
+
+  if (isAdmin) {
+    await admin.from('contracts').update({ status: 'firmado_jercol' }).eq('id', contractId);
+    revalidatePath(`/contratos/${contractId}`);
+    revalidatePath('/contratos');
+    return;
+  }
+
+  // ---- Segunda firma: se genera el PDF final ----
+  const [{ data: signatures }, { data: client }] = await Promise.all([
+    admin.from('contract_signatures').select('*').eq('contract_id', contractId),
+    admin.from('clients').select('name').eq('id', contract.client_id).single(),
+  ]);
+
+  const records: SignatureRecord[] = [];
+  for (const s of signatures || []) {
+    let image: Uint8Array | null = null;
+    let mime: string | null = null;
+    if (s.signature_path) {
+      const { data: blob } = await admin.storage.from('contracts').download(s.signature_path);
+      if (blob) {
+        image = new Uint8Array(await blob.arrayBuffer());
+        mime = s.signature_path.endsWith('.jpg') ? 'image/jpeg' : 'image/png';
+      }
+    }
+    records.push({
+      rolLabel: s.signer_role === 'jercol' ? 'Firma de Jercol Technologies' : 'Firma del cliente',
+      fullName: s.full_name,
+      documentId: s.document_id,
+      signedAt: s.signed_at,
+      ip: s.ip,
+      userAgent: s.user_agent,
+      signatureImage: image,
+      signatureMime: mime,
+    });
+  }
+  records.sort((a) => (a.rolLabel.includes('Jercol') ? -1 : 1));
+
+  try {
+    const finalPdf = await buildSignedPdf({
+      originalPdf: originalBytes,
+      contractTitle: contract.title,
+      clientName: client?.name || '',
+      documentSha256: sha256,
+      signatures: records,
+    });
+
+    const signedPath = `${contractId}/firmado/${Date.now()}-contrato-firmado.pdf`;
+    const { error: upErr } = await admin.storage
+      .from('contracts')
+      .upload(signedPath, finalPdf, { contentType: 'application/pdf' });
+
+    if (upErr) {
+      console.error('signContract signed upload:', upErr);
+      return;
+    }
+
+    // Una sola sentencia: el trigger de inmutabilidad bloquea cualquier
+    // cambio posterior en cuanto el estado quede en 'vigente'.
+    await admin
+      .from('contracts')
+      .update({ status: 'vigente', signed_path: signedPath, signed_at: new Date().toISOString() })
+      .eq('id', contractId);
+  } catch (e) {
+    console.error('signContract buildSignedPdf:', e);
+    return;
+  }
+
+  revalidatePath(`/contratos/${contractId}`);
+  revalidatePath('/contratos');
 }
 
 export async function addContractComment(contractId: string, formData: FormData) {

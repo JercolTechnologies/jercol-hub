@@ -78,6 +78,16 @@ export async function deleteContact(contactId: string) {
   revalidatePath('/admin');
 }
 
+export async function linkContactProfile(contactId: string, formData: FormData) {
+  const supabase = await requireAdmin();
+  const profileId = String(formData.get('profile_id') || '');
+  await supabase
+    .from('client_contacts')
+    .update({ profile_id: profileId || null })
+    .eq('id', contactId);
+  revalidatePath('/admin');
+}
+
 export async function setProjectStatus(projectId: string, status: 'activo' | 'terminado') {
   const supabase = await requireAdmin();
   await supabase
