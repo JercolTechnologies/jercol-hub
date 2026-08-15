@@ -172,7 +172,7 @@ export default async function ContractDetailPage({
 
   return (
     <>
-      <AppHeader isAdmin={isAdmin} />
+      <AppHeader isAdmin={isAdmin} isOwner={profile.is_owner} />
       <div className="flex-1 max-w-2xl mx-auto w-full px-4 py-8">
         <Link href="/contratos" className="text-sm text-slate-500 hover:underline">
           ← Contratos

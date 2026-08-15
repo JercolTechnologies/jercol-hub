@@ -53,7 +53,7 @@ export default async function ContractsPage() {
 
   return (
     <>
-      <AppHeader isAdmin={isAdmin} />
+      <AppHeader isAdmin={isAdmin} isOwner={profile.is_owner} />
       <div className="flex-1 max-w-3xl mx-auto w-full px-4 py-8">
         <h1 className="text-xl font-semibold mb-6">Contratos</h1>
 

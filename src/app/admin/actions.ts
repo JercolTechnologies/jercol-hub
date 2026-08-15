@@ -94,6 +94,61 @@ export async function deleteContact(contactId: string) {
   revalidatePath('/admin');
 }
 
+/**
+ * Verifica o rechaza el expediente de un cliente.
+ *
+ * Queda constancia de quién verificó y cuándo: eso es lo que después sostiene
+ * que la firma del contrato la hizo el representante legal y no cualquiera.
+ */
+export async function verificarCliente(clientId: string, formData: FormData) {
+  const supabase = await requireAdmin();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const aprobar = String(formData.get('decision') || '') === 'aprobar';
+  const motivo = String(formData.get('rejection_reason') || '').trim();
+
+  if (!aprobar && !motivo) {
+    revalidatePath('/admin');
+    return;
+  }
+
+  await supabase
+    .from('clients')
+    .update(
+      aprobar
+        ? {
+            status: 'verificado',
+            verified_at: new Date().toISOString(),
+            verified_by: user?.id ?? null,
+            rejection_reason: null,
+          }
+        : { status: 'rechazado', rejection_reason: motivo }
+    )
+    .eq('id', clientId);
+
+  // Se avisa a todo el equipo del cliente: el responsable puede no ser quien
+  // esté pendiente del resultado.
+  const { data: miembros } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('client_id', clientId);
+
+  const ids = (miembros || []).map((m) => m.id as string);
+  if (ids.length) {
+    await notifyMany(
+      ids,
+      `client-${aprobar ? 'ok' : 'no'}:${clientId}`,
+      aprobar
+        ? '✅ <b>Registro verificado</b>\nYa puedes empezar a trabajar en Jercol Hub.'
+        : `⚠️ <b>Registro no verificado</b>\n${motivo}`
+    );
+  }
+
+  revalidatePath('/admin');
+}
+
 export async function linkContactProfile(contactId: string, formData: FormData) {
   const supabase = await requireAdmin();
   const profileId = String(formData.get('profile_id') || '');

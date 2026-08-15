@@ -1,10 +1,18 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import AppHeader from '@/components/AppHeader';
+import ClientDocLink from '@/components/ClientDocLink';
 import { createClient } from '@/lib/supabase/server';
-import type { ClientContact, ClientRow, Profile, Project } from '@/lib/types';
 import {
-  createClientOrg,
+  CLIENT_DOC_LABEL,
+  CLIENT_STATUS_LABEL,
+  type ClientContact,
+  type ClientDocument,
+  type ClientRow,
+  type Profile,
+  type Project,
+} from '@/lib/types';
+import {
   createProject,
   assignUser,
   setClientArchived,
@@ -12,6 +20,7 @@ import {
   deleteContact,
   setProjectStatus,
   linkContactProfile,
+  verificarCliente,
 } from './actions';
 
 type ProjectWithClient = Project & { clients: { name: string } | null };
@@ -33,6 +42,7 @@ export default async function AdminPage() {
     { data: projects },
     { data: contacts },
     { data: assignedUsers },
+    { data: docs },
   ] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user.id).single<Profile>(),
     supabase.from('clients').select('*').order('name').returns<ClientRow[]>(),
@@ -58,13 +68,26 @@ export default async function AdminPage() {
       .eq('role', 'client')
       .not('client_id', 'is', null)
       .returns<Profile[]>(),
+    supabase
+      .from('client_documents')
+      .select('*')
+      .order('created_at', { ascending: true })
+      .returns<ClientDocument[]>(),
   ]);
 
   if (!profile || profile.role !== 'admin') redirect('/');
 
   const allClients = clients || [];
-  const activeClients = allClients.filter((c) => !c.archived);
+  const porVerificar = allClients.filter((c) => c.status === 'pendiente');
+  const activeClients = allClients.filter((c) => !c.archived && c.status !== 'pendiente');
   const archivedClients = allClients.filter((c) => c.archived);
+
+  const docsByClient = new Map<string, ClientDocument[]>();
+  (docs || []).forEach((d) => {
+    const list = docsByClient.get(d.client_id) || [];
+    list.push(d);
+    docsByClient.set(d.client_id, list);
+  });
   const projectsByClient = new Map<string, ProjectWithClient[]>();
   (projects || []).forEach((p) => {
     const list = projectsByClient.get(p.client_id) || [];
@@ -275,67 +298,164 @@ export default async function AdminPage() {
       <div className="flex-1 max-w-5xl mx-auto w-full px-4 py-8">
         <h1 className="text-xl font-semibold mb-8">Panel de administración</h1>
 
-      <section className="mb-10">
-        <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">
-          Nuevo cliente
-        </h2>
-        <form action={createClientOrg} className="flex gap-2 max-w-md">
-          <input
-            type="text"
-            name="name"
-            required
-            placeholder="Nombre del cliente / empresa"
-            className="flex-1 rounded border border-slate-300 px-3 py-2 text-sm"
-          />
-          <button
-            type="submit"
-            className="rounded bg-blue-600 text-white text-sm font-medium px-4 py-2 hover:bg-blue-700"
-          >
-            Crear
-          </button>
-        </form>
-      </section>
+        {porVerificar.length > 0 && (
+          <section className="mb-10">
+            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">
+              Registros por verificar ({porVerificar.length})
+            </h2>
+            <p className="text-sm text-slate-500 mb-3">
+              Coteja el documento declarado contra el RUT y la cédula. Hasta que no verifiques,
+              este cliente no puede firmar contratos.
+            </p>
 
-      {pending && pending.length > 0 && (
-        <section className="mb-10">
-          <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">
-            Usuarios pendientes de asignar
-          </h2>
-          <div className="space-y-2">
-            {pending.map((p) => (
-              <form
-                key={p.id}
-                action={assignUser}
-                className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-4 py-2"
-              >
-                <input type="hidden" name="user_id" value={p.id} />
-                <div className="flex-1 text-sm">
-                  <div className="font-medium">{p.full_name || 'Sin nombre'}</div>
-                  <div className="text-slate-500">{p.email}</div>
+            <div className="space-y-4">
+              {porVerificar.map((c) => (
+                <div key={c.id} className="bg-white border border-amber-200 rounded-lg p-4">
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <div>
+                      <h3 className="font-medium">{c.name}</h3>
+                      <div className="text-xs text-slate-500">
+                        {c.kind === 'juridica' ? 'Empresa' : 'Persona natural'} · {c.tax_id}
+                      </div>
+                    </div>
+                    <span className="text-[11px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 font-semibold shrink-0">
+                      {CLIENT_STATUS_LABEL[c.status]}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-600 mb-3">
+                    {c.city && (
+                      <div>
+                        <span className="text-slate-400">Ciudad:</span> {c.city}
+                      </div>
+                    )}
+                    {c.phone && (
+                      <div>
+                        <span className="text-slate-400">Teléfono:</span> {c.phone}
+                      </div>
+                    )}
+                    {c.address && (
+                      <div className="col-span-2">
+                        <span className="text-slate-400">Dirección:</span> {c.address}
+                      </div>
+                    )}
+                    {(contactsByClient.get(c.id) || [])
+                      .filter((ct) => ct.is_legal_rep)
+                      .map((ct) => (
+                        <div key={ct.id} className="col-span-2">
+                          <span className="text-slate-400">Representante legal:</span>{' '}
+                          {ct.full_name} {ct.role_label ? `(${ct.role_label})` : ''}
+                          {ct.profile_id ? ' · cuenta vinculada' : ' · sin cuenta vinculada'}
+                        </div>
+                      ))}
+                    {c.data_consent_at && (
+                      <div className="col-span-2 text-slate-400">
+                        Autorizó el tratamiento de datos el{' '}
+                        {new Date(c.data_consent_at).toLocaleDateString('es')}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="border-t border-slate-100 pt-3 mb-3">
+                    <div className="text-xs font-semibold text-slate-500 mb-1">Documentos</div>
+                    <ul className="space-y-1">
+                      {(docsByClient.get(c.id) || []).map((d) => (
+                        <li key={d.id}>
+                          <ClientDocLink
+                            path={d.storage_path}
+                            label={`${CLIENT_DOC_LABEL[d.kind]} — ${d.file_name}`}
+                          />
+                        </li>
+                      ))}
+                      {(docsByClient.get(c.id) || []).length === 0 && (
+                        <li className="text-xs text-slate-400">Sin documentos adjuntos.</li>
+                      )}
+                    </ul>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+                    <form action={verificarCliente.bind(null, c.id)}>
+                      <input type="hidden" name="decision" value="aprobar" />
+                      <button className="text-sm px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer">
+                        Verificar
+                      </button>
+                    </form>
+
+                    <form
+                      action={verificarCliente.bind(null, c.id)}
+                      className="flex gap-2 items-center flex-1"
+                    >
+                      <input type="hidden" name="decision" value="rechazar" />
+                      <input
+                        type="text"
+                        name="rejection_reason"
+                        placeholder="Motivo del rechazo (se le muestra al cliente)"
+                        className="flex-1 rounded border border-slate-300 px-2 py-1.5 text-sm"
+                      />
+                      <button className="text-sm px-3 py-1.5 rounded border border-slate-300 hover:bg-slate-50 cursor-pointer">
+                        Rechazar
+                      </button>
+                    </form>
+                  </div>
                 </div>
-                <select
-                  name="client_id"
-                  required
-                  className="rounded border border-slate-300 text-sm px-2 py-1"
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/*
+          Ya no se crean clientes a mano: los registra el propio cliente con su
+          expediente y aquí solo se verifican. El formulario de "asignar
+          usuario" también desapareció — quien se registra queda ligado a su
+          organización, y a los demás los aprueba el responsable de esa cuenta.
+
+          Se conserva la asignación manual como salida de emergencia para
+          cuentas que quedaron sueltas antes de este cambio.
+        */}
+        {pending && pending.length > 0 && (
+          <section className="mb-10">
+            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">
+              Cuentas sin organización ({pending.length})
+            </h2>
+            <p className="text-sm text-slate-500 mb-3">
+              Se registraron pero no completaron el alta. Normalmente se resuelve solo cuando
+              entran; asígnalas a mano únicamente si quedaron atascadas.
+            </p>
+            <div className="space-y-2">
+              {pending.map((p) => (
+                <form
+                  key={p.id}
+                  action={assignUser}
+                  className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-4 py-2"
                 >
-                  <option value="">Asignar a...</option>
-                  {activeClients.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="submit"
-                  className="rounded bg-slate-800 text-white text-sm px-3 py-1 hover:bg-slate-700"
-                >
-                  Asignar
-                </button>
-              </form>
-            ))}
-          </div>
-        </section>
-      )}
+                  <input type="hidden" name="user_id" value={p.id} />
+                  <div className="flex-1 text-sm">
+                    <div className="font-medium">{p.full_name || 'Sin nombre'}</div>
+                    <div className="text-slate-500">{p.email}</div>
+                  </div>
+                  <select
+                    name="client_id"
+                    required
+                    className="rounded border border-slate-300 text-sm px-2 py-1"
+                  >
+                    <option value="">Asignar a...</option>
+                    {activeClients.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="submit"
+                    className="rounded bg-slate-800 text-white text-sm px-3 py-1 hover:bg-slate-700 cursor-pointer"
+                  >
+                    Asignar
+                  </button>
+                </form>
+              ))}
+            </div>
+          </section>
+        )}
 
       <section className="mb-10">
         <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">

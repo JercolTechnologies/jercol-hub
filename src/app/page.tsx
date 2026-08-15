@@ -4,6 +4,23 @@ import AppHeader from '@/components/AppHeader';
 import { createClient } from '@/lib/supabase/server';
 import type { Profile, Project } from '@/lib/types';
 
+/** Pantalla de una sola frase, para los estados en los que no hay nada que hacer. */
+function Aviso({ titulo, texto }: { titulo: string; texto: string }) {
+  return (
+    <div className="flex flex-1 items-center justify-center px-4">
+      <div className="max-w-md text-center">
+        <h1 className="text-lg font-semibold mb-2">{titulo}</h1>
+        <p className="text-sm text-slate-500 mb-4">{texto}</p>
+        <form action="/logout" method="post">
+          <button className="text-sm text-blue-600 hover:underline cursor-pointer" type="submit">
+            Cerrar sesión
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default async function Home() {
   const supabase = await createClient();
 
@@ -54,22 +71,54 @@ export default async function Home() {
     redirect('/admin');
   }
 
+  // Sin organización todavía: hay que completar el registro.
   if (!profile.client_id) {
+    redirect('/registro');
+  }
+
+  // Pidió unirse a una organización y su responsable aún no lo aprueba.
+  if (profile.member_status === 'pendiente') {
     return (
-      <div className="flex flex-1 items-center justify-center px-4">
-        <div className="max-w-sm text-center">
-          <h1 className="text-lg font-semibold mb-2">Cuenta creada</h1>
-          <p className="text-sm text-slate-500 mb-4">
-            Tu cuenta está pendiente de que un administrador te asigne a tu proyecto. Te
-            avisaremos apenas quede lista.
-          </p>
-          <form action="/logout" method="post">
-            <button className="text-sm text-blue-600 hover:underline" type="submit">
-              Cerrar sesión
-            </button>
-          </form>
-        </div>
-      </div>
+      <Aviso
+        titulo="Solicitud enviada"
+        texto="Le pedimos a quien administra la cuenta de tu organización que apruebe tu ingreso. Te avisamos apenas lo haga."
+      />
+    );
+  }
+
+  if (profile.member_status === 'rechazado') {
+    return (
+      <Aviso
+        titulo="Solicitud no aprobada"
+        texto="Quien administra la cuenta de tu organización no aprobó tu ingreso. Si crees que es un error, háblalo directamente con esa persona."
+      />
+    );
+  }
+
+  const { data: cliente } = await supabase
+    .from('clients')
+    .select('status, rejection_reason, name')
+    .eq('id', profile.client_id)
+    .maybeSingle();
+
+  if (cliente?.status === 'pendiente') {
+    return (
+      <Aviso
+        titulo="Registro en revisión"
+        texto={`Estamos verificando los documentos de ${cliente.name}. Es un paso rápido: apenas quede listo te habilitamos y podrás empezar.`}
+      />
+    );
+  }
+
+  if (cliente?.status === 'rechazado') {
+    return (
+      <Aviso
+        titulo="No pudimos verificar el registro"
+        texto={
+          cliente.rejection_reason ||
+          'Hubo un problema con los documentos aportados. Escríbenos para resolverlo.'
+        }
+      />
     );
   }
 
@@ -79,7 +128,7 @@ export default async function Home() {
 
   return (
     <>
-      <AppHeader isAdmin={false} />
+      <AppHeader isAdmin={false} isOwner={profile.is_owner} />
       <div className="flex-1 max-w-3xl mx-auto w-full px-4 py-8">
         <h1 className="text-lg font-semibold mb-4">Tus proyectos</h1>
         {(!projects || projects.length === 0) && (

@@ -86,6 +86,22 @@ select
        )
        then 'OK' else 'FALTA' end
 
+union all
+select
+  '010_expediente_cliente',
+  case when to_regclass('public.client_documents') is not null
+       and exists (
+         select 1 from information_schema.columns
+         where table_schema = 'public' and table_name = 'clients'
+           and column_name = 'tax_id'
+       )
+       and exists (
+         select 1 from information_schema.columns
+         where table_schema = 'public' and table_name = 'profiles'
+           and column_name = 'member_status'
+       )
+       then 'OK' else 'FALTA' end
+
 order by migracion;
 
 

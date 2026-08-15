@@ -7,7 +7,14 @@ import Link from 'next/link';
  * El nombre de la marca hará de enlace al inicio también cuando exista el
  * logo definitivo.
  */
-export default function AppHeader({ isAdmin }: { isAdmin: boolean }) {
+export default function AppHeader({
+  isAdmin,
+  isOwner = false,
+}: {
+  isAdmin: boolean;
+  /** Responsable de la cuenta de un cliente: solo él gestiona su equipo. */
+  isOwner?: boolean;
+}) {
   const home = isAdmin ? '/admin' : '/';
 
   return (
@@ -27,6 +34,11 @@ export default function AppHeader({ isAdmin }: { isAdmin: boolean }) {
           <Link href="/ideas" className="hover:text-slate-900">
             Ideas
           </Link>
+          {isOwner && (
+            <Link href="/equipo" className="hover:text-slate-900">
+              Equipo
+            </Link>
+          )}
           <Link href="/perfil" className="hover:text-slate-900">
             Perfil
           </Link>

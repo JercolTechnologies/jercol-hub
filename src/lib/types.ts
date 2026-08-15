@@ -1,22 +1,70 @@
 export type Role = 'admin' | 'client';
 
+/** Estado dentro del equipo del cliente. Solo un miembro activo ve datos. */
+export type MemberStatus = 'pendiente' | 'activo' | 'rechazado';
+
 export interface Profile {
   id: string;
   full_name: string | null;
   email: string | null;
   role: Role;
   client_id: string | null;
+  member_status: MemberStatus;
+  /** Quien registró la empresa: aprueba a los demás miembros de su equipo. */
+  is_owner: boolean;
+  job_title: string | null;
   telegram_chat_id: string | null;
   telegram_enabled: boolean;
   created_at: string;
 }
 
+export type ClientKind = 'juridica' | 'natural';
+export type ClientStatus = 'pendiente' | 'verificado' | 'rechazado';
+
 export interface ClientRow {
   id: string;
   name: string;
+  kind: ClientKind;
+  /** NIT si es empresa, cédula si es persona natural. Único en el sistema. */
+  tax_id: string | null;
+  address: string | null;
+  city: string | null;
+  phone: string | null;
+  status: ClientStatus;
+  rejection_reason: string | null;
+  verified_at: string | null;
+  verified_by: string | null;
+  data_consent_at: string | null;
+  registered_by: string | null;
   archived: boolean;
   created_at: string;
 }
+
+export type ClientDocumentKind = 'rut' | 'cedula' | 'camara' | 'otro';
+
+export interface ClientDocument {
+  id: string;
+  client_id: string;
+  kind: ClientDocumentKind;
+  storage_path: string;
+  file_name: string;
+  size_bytes: number | null;
+  uploaded_by: string | null;
+  created_at: string;
+}
+
+export const CLIENT_DOC_LABEL: Record<ClientDocumentKind, string> = {
+  rut: 'RUT',
+  cedula: 'Cédula',
+  camara: 'Cámara de Comercio',
+  otro: 'Otro',
+};
+
+export const CLIENT_STATUS_LABEL: Record<ClientStatus, string> = {
+  pendiente: 'Pendiente de verificar',
+  verificado: 'Verificado',
+  rechazado: 'Rechazado',
+};
 
 export type ProjectStatus = 'activo' | 'terminado';
 
