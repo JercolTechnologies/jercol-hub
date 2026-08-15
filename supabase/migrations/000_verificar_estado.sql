@@ -55,6 +55,18 @@ select
        )
        then 'OK' else 'FALTA' end
 
+union all
+select
+  '007_telegram',
+  case when to_regclass('public.telegram_link_tokens') is not null
+       and to_regclass('public.notifications_log') is not null
+       and exists (
+         select 1 from information_schema.columns
+         where table_schema = 'public' and table_name = 'profiles'
+           and column_name = 'telegram_chat_id'
+       )
+       then 'OK' else 'FALTA' end
+
 order by migracion;
 
 

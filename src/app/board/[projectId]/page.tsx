@@ -19,32 +19,28 @@ export default async function BoardPage({
   } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single<Profile>();
+  // Las tres consultas son independientes entre sí. RLS decide qué devuelve
+  // cada una: si el usuario no puede ver el proyecto, llega null; y del
+  // contrato asociado, el cliente nunca recibe borradores.
+  const [{ data: profile }, { data: project }, { data: contractLink }] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', user.id).single<Profile>(),
+    supabase
+      .from('projects')
+      .select('*, clients(name)')
+      .eq('id', projectId)
+      .single<ProjectWithClient>(),
+    supabase
+      .from('contract_projects')
+      .select('contract_id, contracts(id, title, status)')
+      .eq('project_id', projectId)
+      .limit(1)
+      .maybeSingle(),
+  ]);
+
   if (!profile) redirect('/login');
-
-  // RLS decide si este usuario puede ver el proyecto. Si no puede, data viene null.
-  const { data: project } = await supabase
-    .from('projects')
-    .select('*, clients(name)')
-    .eq('id', projectId)
-    .single<ProjectWithClient>();
-
   if (!project) redirect('/');
 
   const isAdmin = profile.role === 'admin';
-
-  // Contrato asociado a este proyecto, para tenerlo a un click desde el tablero.
-  // La RLS filtra: el cliente no ve borradores.
-  const { data: contractLink } = await supabase
-    .from('contract_projects')
-    .select('contract_id, contracts(id, title, status)')
-    .eq('project_id', projectId)
-    .limit(1)
-    .maybeSingle();
 
   const linkedContract = (contractLink as unknown as {
     contracts: { id: string; title: string; status: string } | null;

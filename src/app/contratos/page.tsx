@@ -31,31 +31,25 @@ export default async function ContractsPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single<Profile>();
+  // Todo en un solo nivel. Las listas de clientes y proyectos solo se usan en
+  // el formulario de admin; para un cliente, RLS las devuelve filtradas a lo
+  // suyo y simplemente no se pintan.
+  const [{ data: profile }, { data: contracts }, { data: cs }, { data: ps }] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', user.id).single<Profile>(),
+    supabase
+      .from('contracts')
+      .select('*, clients(name)')
+      .order('created_at', { ascending: false })
+      .returns<Contract[]>(),
+    supabase.from('clients').select('*').eq('archived', false).order('name').returns<ClientRow[]>(),
+    supabase.from('projects').select('*').order('created_at').returns<Project[]>(),
+  ]);
+
   if (!profile) redirect('/login');
 
   const isAdmin = profile.role === 'admin';
-
-  const { data: contracts } = await supabase
-    .from('contracts')
-    .select('*, clients(name)')
-    .order('created_at', { ascending: false })
-    .returns<Contract[]>();
-
-  let clients: ClientRow[] = [];
-  let projects: Project[] = [];
-  if (isAdmin) {
-    const [{ data: cs }, { data: ps }] = await Promise.all([
-      supabase.from('clients').select('*').eq('archived', false).order('name').returns<ClientRow[]>(),
-      supabase.from('projects').select('*').order('created_at').returns<Project[]>(),
-    ]);
-    clients = cs || [];
-    projects = ps || [];
-  }
+  const clients: ClientRow[] = isAdmin ? cs || [] : [];
+  const projects: Project[] = isAdmin ? ps || [] : [];
 
   return (
     <>

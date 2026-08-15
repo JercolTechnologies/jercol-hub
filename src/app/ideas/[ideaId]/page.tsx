@@ -19,32 +19,25 @@ export default async function IdeaDetailPage({
   } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single<Profile>();
+  // Ninguna de las tres depende del resultado de las otras: van en paralelo.
+  // La FK explícita en el embed es a propósito: idea_attachments abre otro
+  // camino entre project_ideas y profiles, y sin nombrarla PostgREST puede
+  // responder 300 (PGRST201, embed ambiguo) y fallar en silencio.
+  const [{ data: profile }, { data: idea }, { data: comments }] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', user.id).single<Profile>(),
+    supabase.from('project_ideas').select('*, clients(name)').eq('id', ideaId).single<ProjectIdea>(),
+    supabase
+      .from('project_idea_comments')
+      .select('*, author:profiles!project_idea_comments_author_id_fkey(full_name)')
+      .eq('idea_id', ideaId)
+      .order('created_at', { ascending: true })
+      .returns<ProjectIdeaComment[]>(),
+  ]);
+
   if (!profile) redirect('/login');
-
-  const isAdmin = profile.role === 'admin';
-
-  const { data: idea } = await supabase
-    .from('project_ideas')
-    .select('*, clients(name)')
-    .eq('id', ideaId)
-    .single<ProjectIdea>();
-
   if (!idea) redirect('/ideas');
 
-  // FK explícita a propósito: idea_attachments abre otro camino entre
-  // project_ideas y profiles, y sin nombrarla PostgREST puede responder 300
-  // (PGRST201, embed ambiguo) y fallar en silencio.
-  const { data: comments } = await supabase
-    .from('project_idea_comments')
-    .select('*, author:profiles!project_idea_comments_author_id_fkey(full_name)')
-    .eq('idea_id', ideaId)
-    .order('created_at', { ascending: true })
-    .returns<ProjectIdeaComment[]>();
+  const isAdmin = profile.role === 'admin';
 
   const addComment = addIdeaComment.bind(null, ideaId);
 

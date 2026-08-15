@@ -24,34 +24,43 @@ export default async function AdminPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single<Profile>();
+  // Un solo nivel para las seis. Si quien entra no es admin, RLS le devuelve
+  // conjuntos vacíos o filtrados y el redirect de abajo lo saca igual.
+  const [
+    { data: profile },
+    { data: clients },
+    { data: pending },
+    { data: projects },
+    { data: contacts },
+    { data: assignedUsers },
+  ] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', user.id).single<Profile>(),
+    supabase.from('clients').select('*').order('name').returns<ClientRow[]>(),
+    supabase
+      .from('profiles')
+      .select('*')
+      .eq('role', 'client')
+      .is('client_id', null)
+      .returns<Profile[]>(),
+    supabase
+      .from('projects')
+      .select('*, clients(name)')
+      .order('created_at', { ascending: true })
+      .returns<ProjectWithClient[]>(),
+    supabase
+      .from('client_contacts')
+      .select('*')
+      .order('created_at', { ascending: true })
+      .returns<ClientContact[]>(),
+    supabase
+      .from('profiles')
+      .select('*')
+      .eq('role', 'client')
+      .not('client_id', 'is', null)
+      .returns<Profile[]>(),
+  ]);
 
   if (!profile || profile.role !== 'admin') redirect('/');
-
-  const [{ data: clients }, { data: pending }, { data: projects }, { data: contacts }] =
-    await Promise.all([
-      supabase.from('clients').select('*').order('name').returns<ClientRow[]>(),
-      supabase
-        .from('profiles')
-        .select('*')
-        .eq('role', 'client')
-        .is('client_id', null)
-        .returns<Profile[]>(),
-      supabase
-        .from('projects')
-        .select('*, clients(name)')
-        .order('created_at', { ascending: true })
-        .returns<ProjectWithClient[]>(),
-      supabase
-        .from('client_contacts')
-        .select('*')
-        .order('created_at', { ascending: true })
-        .returns<ClientContact[]>(),
-    ]);
 
   const allClients = clients || [];
   const activeClients = allClients.filter((c) => !c.archived);
@@ -70,13 +79,6 @@ export default async function AdminPage() {
   });
 
   // Cuentas ya asignadas a un cliente, para poder vincularlas a un contacto.
-  const { data: assignedUsers } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('role', 'client')
-    .not('client_id', 'is', null)
-    .returns<Profile[]>();
-
   const usersByClient = new Map<string, Profile[]>();
   (assignedUsers || []).forEach((u) => {
     if (!u.client_id) return;

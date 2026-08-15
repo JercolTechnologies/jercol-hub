@@ -15,11 +15,17 @@ export default async function Home() {
     redirect('/login');
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single<Profile>();
+  // El perfil y los proyectos van en paralelo: la política RLS de projects ya
+  // limita al cliente a los suyos, así que la consulta no necesita esperar a
+  // conocer el client_id del perfil.
+  const [{ data: profile }, { data: projects }] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', user.id).single<Profile>(),
+    supabase
+      .from('projects')
+      .select('*')
+      .order('created_at', { ascending: true })
+      .returns<Project[]>(),
+  ]);
 
   if (!profile) {
     // No redirigir a /login aquí: el usuario ya está autenticado, así que el
@@ -66,13 +72,6 @@ export default async function Home() {
       </div>
     );
   }
-
-  const { data: projects } = await supabase
-    .from('projects')
-    .select('*')
-    .eq('client_id', profile.client_id)
-    .order('created_at', { ascending: true })
-    .returns<Project[]>();
 
   if (projects && projects.length === 1) {
     redirect(`/board/${projects[0].id}`);

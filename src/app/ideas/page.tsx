@@ -25,20 +25,19 @@ export default async function IdeasPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single<Profile>();
+  // En paralelo: RLS ya limita las ideas a las del cliente del usuario.
+  const [{ data: profile }, { data: ideas }] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', user.id).single<Profile>(),
+    supabase
+      .from('project_ideas')
+      .select('*, clients(name)')
+      .order('created_at', { ascending: false })
+      .returns<ProjectIdea[]>(),
+  ]);
+
   if (!profile) redirect('/login');
 
   const isAdmin = profile.role === 'admin';
-
-  const { data: ideas } = await supabase
-    .from('project_ideas')
-    .select('*, clients(name)')
-    .order('created_at', { ascending: false })
-    .returns<ProjectIdea[]>();
 
   return (
     <>

@@ -86,69 +86,70 @@ export default async function ContractDetailPage({
   } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single<Profile>();
+  // Nivel 1: todo lo que solo necesita el id del usuario o el id del contrato
+  // va junto. RLS filtra por cliente dentro de Postgres, así que estas
+  // consultas no tienen que esperar a que se cargue el perfil.
+  const [
+    { data: profile },
+    { data: contract },
+    { data: versions },
+    { data: comments },
+    { data: addenda },
+    { data: links },
+    { data: signatures },
+  ] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', user.id).single<Profile>(),
+    supabase.from('contracts').select('*, clients(name)').eq('id', contractId).single<Contract>(),
+    supabase
+      .from('contract_versions')
+      .select('*')
+      .eq('contract_id', contractId)
+      .order('version_number', { ascending: false })
+      .returns<ContractVersion[]>(),
+    supabase
+      .from('contract_comments')
+      .select('*, author:profiles!contract_comments_author_id_fkey(full_name)')
+      .eq('contract_id', contractId)
+      .order('created_at', { ascending: true })
+      .returns<ContractComment[]>(),
+    supabase
+      .from('contract_addenda')
+      .select('*')
+      .eq('contract_id', contractId)
+      .order('agreed_on', { ascending: false })
+      .returns<ContractAddendum[]>(),
+    supabase
+      .from('contract_projects')
+      .select('project_id, projects(id, name)')
+      .eq('contract_id', contractId),
+    supabase
+      .from('contract_signatures')
+      .select('*')
+      .eq('contract_id', contractId)
+      .returns<ContractSignature[]>(),
+  ]);
+
   if (!profile) redirect('/login');
+  if (!contract) redirect('/contratos');
 
   const isAdmin = profile.role === 'admin';
 
-  const { data: contract } = await supabase
-    .from('contracts')
-    .select('*, clients(name)')
-    .eq('id', contractId)
-    .single<Contract>();
-
-  if (!contract) redirect('/contratos');
-
-  const [{ data: versions }, { data: comments }, { data: addenda }, { data: contacts }, { data: links }] =
-    await Promise.all([
-      supabase
-        .from('contract_versions')
-        .select('*')
-        .eq('contract_id', contractId)
-        .order('version_number', { ascending: false })
-        .returns<ContractVersion[]>(),
-      supabase
-        .from('contract_comments')
-        .select('*, author:profiles!contract_comments_author_id_fkey(full_name)')
-        .eq('contract_id', contractId)
-        .order('created_at', { ascending: true })
-        .returns<ContractComment[]>(),
-      supabase
-        .from('contract_addenda')
-        .select('*')
-        .eq('contract_id', contractId)
-        .order('agreed_on', { ascending: false })
-        .returns<ContractAddendum[]>(),
-      supabase
-        .from('client_contacts')
-        .select('*')
-        .eq('client_id', contract.client_id)
-        .returns<ClientContact[]>(),
-      supabase
-        .from('contract_projects')
-        .select('project_id, projects(id, name)')
-        .eq('contract_id', contractId),
-    ]);
-
-  const { data: signatures } = await supabase
-    .from('contract_signatures')
-    .select('*')
-    .eq('contract_id', contractId)
-    .returns<ContractSignature[]>();
-
-  // Para poder reasignar qué proyectos cubre el contrato (solo admin).
-  const { data: clientProjects } = isAdmin
-    ? await supabase
-        .from('projects')
-        .select('*')
-        .eq('client_id', contract.client_id)
-        .order('created_at')
-        .returns<Project[]>()
-    : { data: [] as Project[] };
+  // Nivel 2: lo único que sí depende del contrato, porque filtra por su cliente.
+  const [{ data: contacts }, { data: clientProjects }] = await Promise.all([
+    supabase
+      .from('client_contacts')
+      .select('*')
+      .eq('client_id', contract.client_id)
+      .returns<ClientContact[]>(),
+    isAdmin
+      ? supabase
+          .from('projects')
+          .select('*')
+          .eq('client_id', contract.client_id)
+          .order('created_at')
+          .returns<Project[]>()
+      : Promise.resolve({ data: [] as Project[] }),
+  ]);
 
   const versionList = versions || [];
   const latest = versionList[0];
