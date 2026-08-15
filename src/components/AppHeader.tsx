@@ -27,6 +27,9 @@ export default function AppHeader({ isAdmin }: { isAdmin: boolean }) {
           <Link href="/ideas" className="hover:text-slate-900">
             Ideas
           </Link>
+          <Link href="/perfil" className="hover:text-slate-900">
+            Perfil
+          </Link>
         </nav>
 
         <form action="/logout" method="post" className="ml-auto">

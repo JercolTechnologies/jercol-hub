@@ -2,6 +2,8 @@
 
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { adminProfileIds, notifyMany } from '@/lib/telegram/client';
+import { msgCuentaNueva } from '@/lib/telegram/mensajes';
 
 export async function signup(formData: FormData) {
   const fullName = String(formData.get('full_name') || '').trim();
@@ -25,6 +27,13 @@ export async function signup(formData: FormData) {
   if (error) {
     redirect('/signup?error=' + encodeURIComponent(error.message));
   }
+
+  // Avisa a Jercol que hay una cuenta nueva por asignar a un cliente.
+  await notifyMany(
+    await adminProfileIds(),
+    `signup:${data.user?.id ?? email}`,
+    msgCuentaNueva({ nombre: fullName, correo: email })
+  );
 
   // Si el proyecto tiene "Confirm email" activado, no hay sesión todavía.
   if (!data.session) {

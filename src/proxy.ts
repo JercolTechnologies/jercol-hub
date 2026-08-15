@@ -7,6 +7,9 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // Se excluye /api a propósito: son webhooks que llaman Telegram y Supabase,
+    // sin sesión de usuario. Si pasaran por aquí, el proxy los redirigiría a
+    // /login y nunca se ejecutarían. Cada ruta de /api valida su propio secreto.
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

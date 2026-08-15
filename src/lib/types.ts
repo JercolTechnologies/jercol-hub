@@ -6,6 +6,8 @@ export interface Profile {
   email: string | null;
   role: Role;
   client_id: string | null;
+  telegram_chat_id: string | null;
+  telegram_enabled: boolean;
   created_at: string;
 }
 

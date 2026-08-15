@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { clientProfileIds, notifyMany } from '@/lib/telegram/client';
+import { msgProyectoNuevo } from '@/lib/telegram/mensajes';
 
 async function requireAdmin() {
   const supabase = await createClient();
@@ -33,7 +35,21 @@ export async function createProject(clientId: string, formData: FormData) {
   const supabase = await requireAdmin();
   const name = String(formData.get('name') || '').trim();
   if (!name) return;
-  await supabase.from('projects').insert({ client_id: clientId, name });
+
+  const { data: project } = await supabase
+    .from('projects')
+    .insert({ client_id: clientId, name })
+    .select('id')
+    .single();
+
+  if (project) {
+    await notifyMany(
+      await clientProfileIds(clientId),
+      `project:${project.id}`,
+      msgProyectoNuevo({ nombre: name, projectId: project.id as string })
+    );
+  }
+
   revalidatePath('/admin');
 }
 

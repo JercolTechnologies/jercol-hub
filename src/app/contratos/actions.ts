@@ -7,6 +7,12 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { buildSignedPdf, type SignatureRecord } from '@/lib/pdf/certificacion';
+import { adminProfileIds, clientProfileIds, notifyMany } from '@/lib/telegram/client';
+import {
+  msgContratoFirmado,
+  msgContratoPublicado,
+  msgVistoBueno,
+} from '@/lib/telegram/mensajes';
 import type { ContractStatus, SignerRole } from '@/lib/types';
 
 async function requireUser() {
@@ -60,6 +66,34 @@ export async function setContractStatus(contractId: string, status: ContractStat
 
   const { error } = await supabase.from('contracts').update({ status }).eq('id', contractId);
   if (error) console.error('setContractStatus:', error);
+
+  if (!error) {
+    const { data: contract } = await supabase
+      .from('contracts')
+      .select('title, client_id')
+      .eq('id', contractId)
+      .maybeSingle();
+
+    if (contract) {
+      if (status === 'en_revision') {
+        await notifyMany(
+          await clientProfileIds(contract.client_id as string),
+          `contract-published:${contractId}`,
+          msgContratoPublicado({ titulo: contract.title as string, contractId })
+        );
+      } else if (status === 'aprobado') {
+        await notifyMany(
+          await adminProfileIds(),
+          `contract-approved:${contractId}`,
+          msgVistoBueno({
+            titulo: contract.title as string,
+            cliente: profile.full_name || profile.email || 'El cliente',
+            contractId,
+          })
+        );
+      }
+    }
+  }
 
   revalidatePath(`/contratos/${contractId}`);
   revalidatePath('/contratos');
@@ -291,6 +325,19 @@ export async function signContract(contractId: string, formData: FormData) {
 
   if (isAdmin) {
     await admin.from('contracts').update({ status: 'firmado_jercol' }).eq('id', contractId);
+
+    // Avisa al cliente: ahora le toca firmar a él.
+    await notifyMany(
+      await clientProfileIds(contract.client_id),
+      `contract-signed-jercol:${contractId}`,
+      msgContratoFirmado({
+        titulo: contract.title,
+        quien: fullName,
+        completo: false,
+        contractId,
+      })
+    );
+
     revalidatePath(`/contratos/${contractId}`);
     revalidatePath('/contratos');
     return;
@@ -351,6 +398,19 @@ export async function signContract(contractId: string, formData: FormData) {
       .from('contracts')
       .update({ status: 'vigente', signed_path: signedPath, signed_at: new Date().toISOString() })
       .eq('id', contractId);
+
+    // Contrato completo: se avisa a ambas partes.
+    const texto = msgContratoFirmado({
+      titulo: contract.title,
+      quien: fullName,
+      completo: true,
+      contractId,
+    });
+    const destinatarios = [
+      ...(await adminProfileIds()),
+      ...(await clientProfileIds(contract.client_id)),
+    ];
+    await notifyMany(destinatarios, `contract-vigente:${contractId}`, texto);
   } catch (e) {
     console.error('signContract buildSignedPdf:', e);
     return;
