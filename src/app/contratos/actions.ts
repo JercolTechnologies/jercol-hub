@@ -110,6 +110,70 @@ export async function uploadVersion(contractId: string, formData: FormData) {
   revalidatePath(`/contratos/${contractId}`);
 }
 
+export async function uploadPoder(contractId: string, formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const file = formData.get('file') as File | null;
+  if (!file || file.size === 0) return;
+
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const path = `${contractId}/poder/${Date.now()}-${safeName}`;
+
+  const { error: upErr } = await supabase.storage
+    .from('contracts')
+    .upload(path, file, { contentType: file.type || undefined });
+
+  if (upErr) {
+    console.error('uploadPoder storage:', upErr);
+    return;
+  }
+
+  await supabase.from('contracts').update({ poder_path: path }).eq('id', contractId);
+  revalidatePath(`/contratos/${contractId}`);
+}
+
+export async function updateContractProjects(contractId: string, formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const projectIds = formData.getAll('project_ids').map(String).filter(Boolean);
+
+  // Se reemplaza el conjunto completo: más simple y sin estados intermedios raros.
+  await supabase.from('contract_projects').delete().eq('contract_id', contractId);
+  if (projectIds.length) {
+    await supabase
+      .from('contract_projects')
+      .insert(projectIds.map((pid) => ({ contract_id: contractId, project_id: pid })));
+  }
+
+  revalidatePath(`/contratos/${contractId}`);
+}
+
+export async function deleteContract(contractId: string) {
+  const { supabase } = await requireAdmin();
+
+  // Los archivos de Storage no se borran solos con el cascade de Postgres:
+  // hay que recogerlos antes de perder las filas que los referencian.
+  const [{ data: versions }, { data: addenda }, { data: contract }] = await Promise.all([
+    supabase.from('contract_versions').select('storage_path').eq('contract_id', contractId),
+    supabase.from('contract_addenda').select('evidence_path').eq('contract_id', contractId),
+    supabase.from('contracts').select('poder_path').eq('id', contractId).single(),
+  ]);
+
+  const paths = [
+    ...(versions || []).map((v) => v.storage_path as string),
+    ...(addenda || []).map((a) => a.evidence_path as string | null),
+    (contract?.poder_path as string | null) ?? null,
+  ].filter((p): p is string => !!p);
+
+  if (paths.length) {
+    const { error } = await supabase.storage.from('contracts').remove(paths);
+    if (error) console.error('deleteContract storage:', error);
+  }
+
+  await supabase.from('contracts').delete().eq('id', contractId);
+
+  revalidatePath('/contratos');
+  redirect('/contratos');
+}
+
 export async function addContractComment(contractId: string, formData: FormData) {
   const { supabase, user } = await requireUser();
   const body = String(formData.get('body') || '').trim();

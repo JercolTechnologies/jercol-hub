@@ -117,7 +117,7 @@ export default function IdeaAttachments({
         {attachments.map((a) => (
           <li key={a.id} className="flex items-center gap-2 text-sm">
             <button
-              className="text-blue-600 hover:underline text-left truncate"
+              className="text-blue-600 hover:underline text-left truncate cursor-pointer"
               onClick={() => download(a)}
             >
               {a.file_name}
@@ -125,7 +125,7 @@ export default function IdeaAttachments({
             <span className="text-[11px] text-slate-400">{formatBytes(a.size_bytes)}</span>
             {(isAdmin || a.uploaded_by === currentUserId) && (
               <button
-                className="text-[11px] text-red-500 hover:underline ml-auto"
+                className="text-[11px] text-red-500 hover:underline ml-auto cursor-pointer"
                 onClick={() => remove(a)}
               >
                 eliminar

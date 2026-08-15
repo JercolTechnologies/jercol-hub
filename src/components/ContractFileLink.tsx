@@ -9,7 +9,9 @@ import { createClient } from '@/lib/supabase/client';
 export default function ContractFileLink({
   path,
   label,
-  className = 'text-sm text-blue-600 hover:underline text-left',
+  // Tailwind v4 pone cursor de flecha en los botones por defecto: si este
+  // botón se ve como enlace, hay que devolverle la manita explícitamente.
+  className = 'text-sm text-blue-600 hover:underline text-left cursor-pointer',
 }: {
   path: string;
   label: string;

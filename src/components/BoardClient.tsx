@@ -749,7 +749,7 @@ export default function BoardClient({
                       </label>
                       {isAdmin && !editingStaging && (
                         <button
-                          className="text-xs text-blue-600 hover:underline"
+                          className="text-xs text-blue-600 hover:underline cursor-pointer"
                           onClick={() => {
                             setStagingInput(staging[openTicket.id] || '');
                             setEditingStaging(true);
@@ -824,7 +824,7 @@ export default function BoardClient({
                     {attachments.map((a) => (
                       <li key={a.id} className="flex items-center gap-2 text-sm">
                         <button
-                          className="text-blue-600 hover:underline text-left truncate"
+                          className="text-blue-600 hover:underline text-left truncate cursor-pointer"
                           onClick={() => downloadAttachment(a)}
                         >
                           {a.file_name}
@@ -832,7 +832,7 @@ export default function BoardClient({
                         <span className="text-[11px] text-slate-400">{formatBytes(a.size_bytes)}</span>
                         {(isAdmin || a.uploaded_by === currentUserId) && (
                           <button
-                            className="text-[11px] text-red-500 hover:underline ml-auto"
+                            className="text-[11px] text-red-500 hover:underline ml-auto cursor-pointer"
                             onClick={() => deleteAttachment(a)}
                           >
                             eliminar

@@ -165,7 +165,8 @@ export default async function AdminPage() {
             )}
           </ul>
 
-          <form action={addContact.bind(null, c.id)} className="space-y-2">
+          <form action={addContact.bind(null, c.id)} className="space-y-2 border-t border-slate-100 pt-3">
+            <div className="text-xs font-semibold text-slate-500">Agregar contacto nuevo</div>
             <div className="flex gap-2">
               <input
                 type="text"
@@ -202,9 +203,9 @@ export default async function AdminPage() {
               </label>
               <button
                 type="submit"
-                className="ml-auto rounded bg-slate-100 text-slate-700 text-sm px-3 py-1.5 hover:bg-slate-200"
+                className="ml-auto rounded bg-slate-800 text-white text-sm px-3 py-1.5 hover:bg-slate-700 cursor-pointer"
               >
-                + Contacto
+                Guardar contacto
               </button>
             </div>
           </form>

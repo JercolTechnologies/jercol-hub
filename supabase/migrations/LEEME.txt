@@ -1,0 +1,61 @@
+MIGRACIONES SQL — JERCOL HUB
+============================
+
+Se corren a mano en el SQL Editor de Supabase, en orden numérico.
+Cada archivo es independiente y se pega completo.
+
+¿No recuerdas cuáles ya corriste?
+---------------------------------
+Corre 000_verificar_estado.sql. No modifica nada: devuelve una tabla
+con OK / FALTA por cada migración.
+
+
+ORDEN
+-----
+001_esquema_inicial.sql
+    Tablas base + RLS + trigger de perfil al registrarse.
+    OJO: empieza con DROP TABLE. Solo en base vacía o para reiniciar todo.
+
+002_estados_fechas_adjuntos_ideas.sql
+    Renombra en_progreso -> en_desarrollo, fecha deseada, indicador de
+    no leído, archivar clientes, adjuntos de tickets, ideas de proyecto,
+    y el trigger que aplica la máquina de estados.
+
+003_adjuntos_ideas.sql
+    Adjuntos en Ideas de proyecto + bucket idea-attachments.
+
+004_link_staging.sql
+    Link de preview por tarjeta (tabla ticket_staging).
+
+005_contratos_fase_a.sql
+    Contactos del cliente, estado del proyecto, contratos con versiones,
+    otrosíes y bucket contracts.
+
+
+PASOS MANUALES QUE NO ESTÁN EN NINGÚN SQL
+-----------------------------------------
+1. Authentication -> Sign In / Providers -> Email: desactivar "Confirm email"
+   (si no, cada cliente tiene que confirmar el correo antes de entrar).
+
+2. Authentication -> URL Configuration:
+     Site URL:      https://jercol-hub.vercel.app
+     Redirect URLs: https://jercol-hub.vercel.app/**
+
+3. Convertir tu cuenta en admin (después de registrarte en /signup):
+     update public.profiles set role = 'admin'
+     where id = (select id from auth.users where email = 'jercoltechnologies@gmail.com');
+
+4. Si te registraste con "Confirm email" activado y quedaste atascado:
+     update auth.users set email_confirmed_at = now()
+     where email = 'jercoltechnologies@gmail.com';
+
+
+REGLAS AL AGREGAR MIGRACIONES NUEVAS
+------------------------------------
+- Toda tabla nueva necesita su política RLS desde el día uno.
+- Usar "if not exists" / "drop policy if exists" para que se pueda
+  volver a correr sin romper nada.
+- Al agregar una tabla que apunte a dos tablas ya relacionadas, revisar
+  los embeds de PostgREST: pueden volverse ambiguos (error 300 /
+  PGRST201). La regla es nombrar siempre la FK en el select.
+- Agregar la comprobación correspondiente a 000_verificar_estado.sql.

@@ -11,6 +11,8 @@ import {
 } from '@/lib/types';
 import { createContract } from './actions';
 
+export const dynamic = 'force-dynamic';
+
 const STATUS_COLOR: Record<ContractStatus, string> = {
   borrador: 'bg-slate-100 text-slate-600',
   en_revision: 'bg-amber-50 text-amber-700',
@@ -118,7 +120,7 @@ export default async function ContractsPage() {
             </div>
             <button
               type="submit"
-              className="rounded bg-blue-600 text-white text-sm font-medium px-4 py-2 hover:bg-blue-700"
+              className="rounded bg-blue-600 text-white text-sm font-medium px-4 py-2 hover:bg-blue-700 cursor-pointer"
             >
               Crear contrato
             </button>
