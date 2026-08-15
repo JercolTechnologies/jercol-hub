@@ -67,6 +67,25 @@ select
        )
        then 'OK' else 'FALTA' end
 
+union all
+select
+  '008_webhooks_notificaciones',
+  case when exists (
+         select 1 from pg_trigger
+         where tgname in ('on_comment_notificar', 'on_ticket_update_notificar')
+       )
+       then 'OK' else 'FALTA' end
+
+union all
+select
+  '009_fix_comentarios_estados_cerrados',
+  case when exists (
+         select 1 from pg_proc
+         where proname = 'enforce_ticket_rules'
+           and prosrc like '%last_activity_at%'
+       )
+       then 'OK' else 'FALTA' end
+
 order by migracion;
 
 

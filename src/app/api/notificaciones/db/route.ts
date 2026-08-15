@@ -27,7 +27,13 @@ interface Payload {
   old_record: Record<string, unknown> | null;
 }
 
-/** Contexto de un ticket: proyecto, cliente y nombre, en una sola consulta. */
+/**
+ * Contexto de un ticket: título, proyecto, cliente y estado.
+ *
+ * Todo esto va en el mensaje porque el aviso tiene que entenderse sin abrir
+ * la app: con varios proyectos activos, "nuevo comentario en «Revision»" no
+ * dice nada si no se sabe de qué proyecto y en qué estado está.
+ */
 async function ticketContext(ticketId: string) {
   const admin = createAdminClient();
   const { data } = await admin
@@ -40,12 +46,19 @@ async function ticketContext(ticketId: string) {
   const project = data.projects as unknown as { name: string; client_id: string } | null;
   if (!project) return null;
 
+  const { data: client } = await admin
+    .from('clients')
+    .select('name')
+    .eq('id', project.client_id)
+    .maybeSingle();
+
   return {
     ticketId: data.id as string,
     titulo: data.title as string,
     projectId: data.project_id as string,
     proyecto: project.name,
     clientId: project.client_id,
+    cliente: (client?.name as string) || undefined,
     status: data.status as TicketStatus,
   };
 }
@@ -94,6 +107,9 @@ export async function POST(request: NextRequest) {
         autor: autor.nombre,
         tarjeta: ctx.titulo,
         cuerpo: (payload.record.body as string) || '',
+        proyecto: ctx.proyecto,
+        cliente: ctx.cliente,
+        estado: ctx.status,
         projectId: ctx.projectId,
       });
 
@@ -121,6 +137,7 @@ export async function POST(request: NextRequest) {
       const texto = msgSolicitudNueva({
         autor: autor.nombre,
         proyecto: ctx.proyecto,
+        cliente: ctx.cliente,
         titulo: ctx.titulo,
         projectId: ctx.projectId,
       });
@@ -147,7 +164,8 @@ export async function POST(request: NextRequest) {
       if (antes === 'en_revision' && despues === 'hecho') {
         const texto = msgAprobada({
           tarjeta: ctx.titulo,
-          cliente: ctx.proyecto,
+          proyecto: ctx.proyecto,
+          cliente: ctx.cliente,
           projectId: ctx.projectId,
         });
         await notifyMany(await adminProfileIds(), `approved:${ctx.ticketId}:${despues}`, texto);
@@ -159,6 +177,8 @@ export async function POST(request: NextRequest) {
         tarjeta: ctx.titulo,
         desde: antes,
         hasta: despues,
+        proyecto: ctx.proyecto,
+        cliente: ctx.cliente,
         projectId: ctx.projectId,
       });
       await notifyMany(

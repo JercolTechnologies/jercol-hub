@@ -38,16 +38,28 @@ function estadoLabel(status: TicketStatus) {
 
 // ---------------------------------------------------------------- Tablero
 
+/**
+ * Todos los avisos del tablero llevan la misma segunda línea: proyecto,
+ * cliente y estado. Es lo que permite entender de qué va el mensaje sin
+ * abrir la app — leyéndolo desde el celular en la calle, por ejemplo.
+ */
+function contexto(p: { proyecto: string; cliente?: string; estado: TicketStatus }) {
+  const quien = p.cliente ? ` (${escapeHtml(p.cliente)})` : '';
+  return `📁 ${escapeHtml(p.proyecto)}${quien} · ${escapeHtml(estadoLabel(p.estado))}\n`;
+}
+
 export function msgSolicitudNueva(p: {
   autor: string;
   proyecto: string;
+  cliente?: string;
   titulo: string;
   projectId: string;
 }) {
   return (
     `🆕 <b>Nueva solicitud</b>\n` +
-    `${escapeHtml(p.autor)} en <b>${escapeHtml(p.proyecto)}</b>\n\n` +
-    `${escapeHtml(p.titulo)}\n\n` +
+    contexto({ proyecto: p.proyecto, cliente: p.cliente, estado: 'solicitudes' }) +
+    `\n«${escapeHtml(p.titulo)}»\n` +
+    `De: ${escapeHtml(p.autor)}\n\n` +
     linkTablero(p.projectId)
   );
 }
@@ -56,13 +68,17 @@ export function msgComentario(p: {
   autor: string;
   tarjeta: string;
   cuerpo: string;
+  proyecto: string;
+  cliente?: string;
+  estado: TicketStatus;
   projectId: string;
 }) {
   const recorte = p.cuerpo.length > 300 ? p.cuerpo.slice(0, 300) + '…' : p.cuerpo;
   return (
     `💬 <b>Nuevo comentario</b>\n` +
-    `${escapeHtml(p.autor)} en «${escapeHtml(p.tarjeta)}»\n\n` +
-    `${escapeHtml(recorte)}\n\n` +
+    contexto({ proyecto: p.proyecto, cliente: p.cliente, estado: p.estado }) +
+    `\n«${escapeHtml(p.tarjeta)}»\n` +
+    `${escapeHtml(p.autor)}:\n${escapeHtml(recorte)}\n\n` +
     linkTablero(p.projectId)
   );
 }
@@ -71,24 +87,32 @@ export function msgCambioEstado(p: {
   tarjeta: string;
   desde: TicketStatus;
   hasta: TicketStatus;
+  proyecto: string;
+  cliente?: string;
   projectId: string;
 }) {
   const emoji = p.hasta === 'en_revision' ? '👀' : p.hasta === 'hecho' ? '✅' : '🔄';
-  const extra =
-    p.hasta === 'en_revision' ? '\n\n<i>Te toca revisar y aprobar.</i>' : '';
+  const extra = p.hasta === 'en_revision' ? '\n<i>Te toca revisar y aprobar.</i>' : '';
 
   return (
     `${emoji} <b>${escapeHtml(estadoLabel(p.hasta))}</b>\n` +
-    `«${escapeHtml(p.tarjeta)}» pasó de ${escapeHtml(estadoLabel(p.desde))} a ` +
-    `${escapeHtml(estadoLabel(p.hasta))}.${extra}\n\n` +
+    contexto({ proyecto: p.proyecto, cliente: p.cliente, estado: p.hasta }) +
+    `\n«${escapeHtml(p.tarjeta)}»\n` +
+    `${escapeHtml(estadoLabel(p.desde))} → ${escapeHtml(estadoLabel(p.hasta))}${extra}\n\n` +
     linkTablero(p.projectId)
   );
 }
 
-export function msgAprobada(p: { tarjeta: string; cliente: string; projectId: string }) {
+export function msgAprobada(p: {
+  tarjeta: string;
+  proyecto: string;
+  cliente?: string;
+  projectId: string;
+}) {
   return (
     `✅ <b>Tarjeta aprobada</b>\n` +
-    `${escapeHtml(p.cliente)} aprobó «${escapeHtml(p.tarjeta)}».\n\n` +
+    contexto({ proyecto: p.proyecto, cliente: p.cliente, estado: 'hecho' }) +
+    `\n«${escapeHtml(p.tarjeta)}» quedó aprobada por el cliente.\n\n` +
     linkTablero(p.projectId)
   );
 }
