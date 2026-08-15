@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import type { Profile, ProjectIdea, ProjectIdeaComment } from '@/lib/types';
 import { addIdeaComment, setIdeaStatus, convertIdeaToProject } from '../actions';
+import AppHeader from '@/components/AppHeader';
 import IdeaAttachments from '@/components/IdeaAttachments';
 
 export default async function IdeaDetailPage({
@@ -48,10 +49,12 @@ export default async function IdeaDetailPage({
   const addComment = addIdeaComment.bind(null, ideaId);
 
   return (
-    <div className="flex-1 max-w-2xl mx-auto w-full px-4 py-8">
-      <Link href="/ideas" className="text-sm text-slate-500 hover:underline">
-        ← Ideas de proyecto
-      </Link>
+    <>
+      <AppHeader isAdmin={isAdmin} />
+      <div className="flex-1 max-w-2xl mx-auto w-full px-4 py-8">
+        <Link href="/ideas" className="text-sm text-slate-500 hover:underline">
+          ← Ideas de proyecto
+        </Link>
 
       <div className="bg-white border border-slate-200 rounded-lg p-5 mt-4">
         <div className="flex items-center justify-between gap-2 mb-2">
@@ -125,12 +128,13 @@ export default async function IdeaDetailPage({
           />
           <button
             type="submit"
-            className="text-sm px-3 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700 self-end"
+            className="text-sm px-3 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700 self-end cursor-pointer"
           >
             Enviar
           </button>
         </form>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

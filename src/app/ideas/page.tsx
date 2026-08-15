@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import AppHeader from '@/components/AppHeader';
 import { createClient } from '@/lib/supabase/server';
 import type { Profile, ProjectIdea, IdeaStatus } from '@/lib/types';
 import { createIdea } from './actions';
@@ -40,13 +41,10 @@ export default async function IdeasPage() {
     .returns<ProjectIdea[]>();
 
   return (
-    <div className="flex-1 max-w-3xl mx-auto w-full px-4 py-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold">Ideas de proyecto</h1>
-        <Link href={isAdmin ? '/admin' : '/'} className="text-sm text-slate-500 hover:underline">
-          ← Volver
-        </Link>
-      </div>
+    <>
+      <AppHeader isAdmin={isAdmin} />
+      <div className="flex-1 max-w-3xl mx-auto w-full px-4 py-8">
+        <h1 className="text-xl font-semibold mb-6">Ideas de proyecto</h1>
 
       <p className="text-sm text-slate-500 mb-6">
         Espacio separado del tablero de tareas — para proponer y conversar sobre proyectos nuevos
@@ -98,7 +96,8 @@ export default async function IdeasPage() {
             )}
           </Link>
         ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

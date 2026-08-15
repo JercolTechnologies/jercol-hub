@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import AppHeader from '@/components/AppHeader';
 import { createClient } from '@/lib/supabase/server';
 import {
   CONTRACT_STATUS_LABEL,
@@ -57,13 +58,10 @@ export default async function ContractsPage() {
   }
 
   return (
-    <div className="flex-1 max-w-3xl mx-auto w-full px-4 py-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold">Contratos</h1>
-        <Link href={isAdmin ? '/admin' : '/'} className="text-sm text-slate-500 hover:underline">
-          ← Volver
-        </Link>
-      </div>
+    <>
+      <AppHeader isAdmin={isAdmin} />
+      <div className="flex-1 max-w-3xl mx-auto w-full px-4 py-8">
+        <h1 className="text-xl font-semibold mb-6">Contratos</h1>
 
       {isAdmin && (
         <details className="bg-white border border-slate-200 rounded-lg p-4 mb-8">
@@ -153,7 +151,8 @@ export default async function ContractsPage() {
             )}
           </Link>
         ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

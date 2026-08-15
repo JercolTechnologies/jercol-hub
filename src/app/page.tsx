@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import AppHeader from '@/components/AppHeader';
 import { createClient } from '@/lib/supabase/server';
 import type { Profile, Project } from '@/lib/types';
 
@@ -78,28 +79,12 @@ export default async function Home() {
   }
 
   return (
-    <div className="flex flex-1 items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-lg font-semibold">Tus proyectos</h1>
-          <div className="flex items-center gap-4">
-            <Link href="/contratos" className="text-sm text-slate-500 hover:underline">
-              Contratos
-            </Link>
-            <Link href="/ideas" className="text-sm text-slate-500 hover:underline">
-              Ideas de proyecto
-            </Link>
-            <form action="/logout" method="post">
-              <button className="text-sm text-slate-500 hover:underline" type="submit">
-                Cerrar sesión
-              </button>
-            </form>
-          </div>
-        </div>
+    <>
+      <AppHeader isAdmin={false} />
+      <div className="flex-1 max-w-3xl mx-auto w-full px-4 py-8">
+        <h1 className="text-lg font-semibold mb-4">Tus proyectos</h1>
         {(!projects || projects.length === 0) && (
-          <p className="text-sm text-slate-500">
-            Todavía no tienes proyectos asignados.
-          </p>
+          <p className="text-sm text-slate-500">Todavía no tienes proyectos asignados.</p>
         )}
         <ul className="space-y-2">
           {projects?.map((p) => (
@@ -114,6 +99,6 @@ export default async function Home() {
           ))}
         </ul>
       </div>
-    </div>
+    </>
   );
 }

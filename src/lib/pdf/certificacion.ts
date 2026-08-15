@@ -58,6 +58,92 @@ export async function buildSignedPdf({
   const helv = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
 
+  // ------------------------------------------------------------------
+  // Hoja 1: las firmas.
+  //
+  // Va en página propia y no estampada al pie del documento original a
+  // propósito: no hay forma de saber qué contenido hay en la última página
+  // y las imágenes podrían solaparse con el bloque de firmas del contrato.
+  // La validez no depende de la posición, sino del consentimiento y del
+  // rastro de la hoja siguiente.
+  // ------------------------------------------------------------------
+  const sigPage = pdf.addPage();
+  {
+    const { height: sh } = sigPage.getSize();
+    const m = 50;
+    let sy = sh - m;
+
+    sigPage.drawText(sanitize('FIRMAS'), {
+      x: m,
+      y: sy,
+      size: 16,
+      font: bold,
+      color: rgb(0.06, 0.09, 0.16),
+    });
+    sy -= 24;
+
+    sigPage.drawText(sanitize(contractTitle), {
+      x: m,
+      y: sy,
+      size: 11,
+      font: helv,
+      color: rgb(0.42, 0.45, 0.5),
+    });
+    sy -= 40;
+
+    for (const s of signatures) {
+      // Imagen de la firma sobre la línea.
+      if (s.signatureImage && s.signatureImage.length) {
+        try {
+          const img =
+            s.signatureMime === 'image/jpeg'
+              ? await pdf.embedJpg(s.signatureImage)
+              : await pdf.embedPng(s.signatureImage);
+          const scale = Math.min(200 / img.width, 55 / img.height, 1);
+          const w = img.width * scale;
+          const h = img.height * scale;
+          sigPage.drawImage(img, { x: m, y: sy - h, width: w, height: h });
+          sy -= h;
+        } catch {
+          sy -= 20;
+        }
+      } else {
+        sy -= 20;
+      }
+
+      // Línea de firma
+      sigPage.drawLine({
+        start: { x: m, y: sy - 4 },
+        end: { x: m + 240, y: sy - 4 },
+        thickness: 0.8,
+        color: rgb(0.2, 0.23, 0.28),
+      });
+      sy -= 18;
+
+      const put = (t: string, size = 10, font = helv, color = rgb(0.06, 0.09, 0.16)) => {
+        sigPage.drawText(sanitize(t), { x: m, y: sy, size, font, color });
+        sy -= size + 5;
+      };
+
+      put(s.fullName, 11, bold);
+      const quien = s.rolLabel.replace('Firma de ', '').replace('Firma del ', '');
+      put(quien.charAt(0).toUpperCase() + quien.slice(1), 9, helv, rgb(0.42, 0.45, 0.5));
+      put(`Documento: ${s.documentId}`, 9);
+      put(`Fecha: ${fmt(s.signedAt)}`, 9, helv, rgb(0.42, 0.45, 0.5));
+
+      sy -= 34;
+      if (sy < 140) break; // no cabe otra firma: el detalle queda en la hoja de certificación
+    }
+
+    sigPage.drawText(
+      sanitize('El detalle de verificacion de estas firmas consta en la pagina siguiente.'),
+      { x: m, y: m, size: 8, font: helv, color: rgb(0.42, 0.45, 0.5) }
+    );
+  }
+
+  // ------------------------------------------------------------------
+  // Hoja 2: certificado con el rastro digital.
+  // ------------------------------------------------------------------
   const page = pdf.addPage();
   const { width, height } = page.getSize();
   const margin = 50;
@@ -107,32 +193,6 @@ export async function buildSignedPdf({
     const ua = s.userAgent || 'no registrado';
     line(`Dispositivo: ${ua.slice(0, 80)}`, 8, helv, muted);
     if (ua.length > 80) line(`  ${ua.slice(80, 160)}`, 8, helv, muted);
-
-    if (s.signatureImage && s.signatureImage.length) {
-      try {
-        const img =
-          s.signatureMime === 'image/jpeg'
-            ? await pdf.embedJpg(s.signatureImage)
-            : await pdf.embedPng(s.signatureImage);
-        const maxW = 180;
-        const scale = Math.min(maxW / img.width, 60 / img.height, 1);
-        const w = img.width * scale;
-        const h = img.height * scale;
-        y -= h;
-        page.drawImage(img, { x: margin, y, width: w, height: h });
-        page.drawLine({
-          start: { x: margin, y: y - 3 },
-          end: { x: margin + Math.max(w, 160), y: y - 3 },
-          thickness: 0.5,
-          color: rgb(0.6, 0.63, 0.68),
-        });
-        y -= 16;
-      } catch {
-        // Si la imagen viene corrupta se sigue: el valor probatorio está
-        // en el rastro, no en el dibujo.
-        line('(firma grafica no disponible)', 8, helv, muted);
-      }
-    }
 
     y -= 6;
     rule();

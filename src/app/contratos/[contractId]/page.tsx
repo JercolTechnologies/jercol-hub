@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import AppHeader from '@/components/AppHeader';
 import ContractFileLink from '@/components/ContractFileLink';
 import FileField from '@/components/FileField';
 import FileUploadForm from '@/components/FileUploadForm';
@@ -169,10 +170,12 @@ export default async function ContractDetailPage({
     signer.profile_id === user.id;
 
   return (
-    <div className="flex-1 max-w-2xl mx-auto w-full px-4 py-8">
-      <Link href="/contratos" className="text-sm text-slate-500 hover:underline">
-        ← Contratos
-      </Link>
+    <>
+      <AppHeader isAdmin={isAdmin} />
+      <div className="flex-1 max-w-2xl mx-auto w-full px-4 py-8">
+        <Link href="/contratos" className="text-sm text-slate-500 hover:underline">
+          ← Contratos
+        </Link>
 
       <RealtimeRefresh
         channel={`contract-${contractId}`}
@@ -596,7 +599,8 @@ export default async function ContractDetailPage({
             </button>
           </form>
         )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

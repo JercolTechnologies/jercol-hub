@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import AppHeader from '@/components/AppHeader';
 import { createClient } from '@/lib/supabase/server';
 import type { ClientContact, ClientRow, Profile, Project } from '@/lib/types';
 import {
@@ -267,23 +268,10 @@ export default async function AdminPage() {
   }
 
   return (
-    <div className="flex-1 max-w-5xl mx-auto w-full px-4 py-8">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-xl font-semibold">Jercol Hub — Admin</h1>
-        <div className="flex items-center gap-4">
-          <Link href="/contratos" className="text-sm text-slate-500 hover:underline">
-            Contratos
-          </Link>
-          <Link href="/ideas" className="text-sm text-slate-500 hover:underline">
-            Ideas de proyecto
-          </Link>
-          <form action="/logout" method="post">
-            <button className="text-sm text-slate-500 hover:underline" type="submit">
-              Cerrar sesión
-            </button>
-          </form>
-        </div>
-      </div>
+    <>
+      <AppHeader isAdmin />
+      <div className="flex-1 max-w-5xl mx-auto w-full px-4 py-8">
+        <h1 className="text-xl font-semibold mb-8">Panel de administración</h1>
 
       <section className="mb-10">
         <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">
@@ -361,18 +349,19 @@ export default async function AdminPage() {
         </div>
       </section>
 
-      {archivedClients.length > 0 && (
-        <details className="mb-10">
-          <summary className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3 cursor-pointer">
-            Archivados ({archivedClients.length})
-          </summary>
-          <div className="space-y-6 mt-3">
-            {archivedClients.map((c) => (
-              <ClientCard key={c.id} c={c} />
-            ))}
-          </div>
-        </details>
-      )}
-    </div>
+        {archivedClients.length > 0 && (
+          <details className="mb-10">
+            <summary className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3 cursor-pointer">
+              Archivados ({archivedClients.length})
+            </summary>
+            <div className="space-y-6 mt-3">
+              {archivedClients.map((c) => (
+                <ClientCard key={c.id} c={c} />
+              ))}
+            </div>
+          </details>
+        )}
+      </div>
+    </>
   );
 }

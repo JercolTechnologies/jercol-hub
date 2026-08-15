@@ -35,7 +35,11 @@ export default function SignContractForm({
   }
 
   return (
-    <form action={action} className="w-full border border-slate-200 rounded-lg p-4 bg-slate-50">
+    <form
+      action={action}
+      autoComplete="off"
+      className="w-full border border-slate-200 rounded-lg p-4 bg-slate-50"
+    >
       <h3 className="font-semibold text-sm mb-3">{heading}</h3>
 
       <div className="space-y-3">
@@ -46,6 +50,7 @@ export default function SignContractForm({
             name="full_name"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            autoComplete="off"
             className="w-full rounded border border-slate-300 px-3 py-2 text-sm"
             placeholder="Tal como aparece en el documento de identidad"
           />
@@ -60,6 +65,7 @@ export default function SignContractForm({
             name="document_id"
             value={documentId}
             onChange={(e) => setDocumentId(e.target.value)}
+            autoComplete="off"
             className="w-full rounded border border-slate-300 px-3 py-2 text-sm"
           />
         </div>

@@ -55,9 +55,9 @@ export default async function BoardPage({
       <header className="bg-white border-b border-slate-200 px-5 py-3 flex items-center gap-3">
         <Link
           href={isAdmin ? '/admin' : '/'}
-          className="text-sm text-slate-500 hover:text-slate-800"
+          className="text-sm text-slate-500 hover:text-slate-800 shrink-0"
         >
-          ← Volver
+          ← {isAdmin ? 'Panel' : 'Mis proyectos'}
         </Link>
         <div className="flex-1">
           <div className="font-semibold text-sm">
@@ -79,8 +79,11 @@ export default async function BoardPage({
             📄 Contrato
           </Link>
         )}
+        <Link href="/contratos" className="text-sm text-slate-500 hover:text-slate-800">
+          Contratos
+        </Link>
         <Link href="/ideas" className="text-sm text-slate-500 hover:text-slate-800">
-          Ideas de proyecto
+          Ideas
         </Link>
         <form action="/logout" method="post">
           <button className="text-sm text-slate-500 hover:underline" type="submit">
