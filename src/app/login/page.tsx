@@ -43,11 +43,17 @@ export default async function LoginPage({
           </div>
           <button
             type="submit"
-            className="w-full rounded bg-blue-600 text-white text-sm font-medium py-2 hover:bg-blue-700"
+            className="w-full rounded bg-blue-600 text-white text-sm font-medium py-2 hover:bg-blue-700 cursor-pointer"
           >
             Entrar
           </button>
         </form>
+
+        <p className="mt-3 text-sm text-center">
+          <Link href="/recuperar" className="text-slate-500 hover:underline">
+            ¿Olvidaste tu contraseña?
+          </Link>
+        </p>
 
         <p className="mt-4 text-sm text-slate-500 text-center">
           ¿No tienes cuenta?{' '}

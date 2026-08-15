@@ -54,3 +54,24 @@ export async function cambiarAvisos(activar: boolean) {
   await supabase.from('profiles').update({ telegram_enabled: activar }).eq('id', user.id);
   revalidatePath('/perfil');
 }
+
+export async function cambiarClave(formData: FormData) {
+  const { supabase } = await requireUser();
+
+  const password = String(formData.get('password') || '');
+  const repetir = String(formData.get('password_repeat') || '');
+
+  if (password.length < 6) {
+    redirect('/perfil?error=' + encodeURIComponent('La contraseña debe tener al menos 6 caracteres.'));
+  }
+  if (password !== repetir) {
+    redirect('/perfil?error=' + encodeURIComponent('Las dos contraseñas no coinciden.'));
+  }
+
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) {
+    redirect('/perfil?error=' + encodeURIComponent(error.message));
+  }
+
+  redirect('/perfil?ok=' + encodeURIComponent('Contraseña actualizada.'));
+}
