@@ -83,6 +83,9 @@ export default async function Home() {
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-lg font-semibold">Tus proyectos</h1>
           <div className="flex items-center gap-4">
+            <Link href="/contratos" className="text-sm text-slate-500 hover:underline">
+              Contratos
+            </Link>
             <Link href="/ideas" className="text-sm text-slate-500 hover:underline">
               Ideas de proyecto
             </Link>

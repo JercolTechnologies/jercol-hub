@@ -51,3 +51,38 @@ export async function setClientArchived(clientId: string, archived: boolean) {
   await supabase.from('clients').update({ archived }).eq('id', clientId);
   revalidatePath('/admin');
 }
+
+export async function addContact(clientId: string, formData: FormData) {
+  const supabase = await requireAdmin();
+  const fullName = String(formData.get('full_name') || '').trim();
+  if (!fullName) return;
+
+  // Normaliza el teléfono a solo dígitos: wa.me no admite espacios ni signos.
+  const rawPhone = String(formData.get('phone') || '').trim();
+  const phone = rawPhone ? rawPhone.replace(/[^0-9]/g, '') : null;
+
+  await supabase.from('client_contacts').insert({
+    client_id: clientId,
+    full_name: fullName,
+    phone,
+    email: String(formData.get('email') || '').trim() || null,
+    role_label: String(formData.get('role_label') || '').trim() || null,
+    is_legal_rep: formData.get('is_legal_rep') === 'on',
+  });
+  revalidatePath('/admin');
+}
+
+export async function deleteContact(contactId: string) {
+  const supabase = await requireAdmin();
+  await supabase.from('client_contacts').delete().eq('id', contactId);
+  revalidatePath('/admin');
+}
+
+export async function setProjectStatus(projectId: string, status: 'activo' | 'terminado') {
+  const supabase = await requireAdmin();
+  await supabase
+    .from('projects')
+    .update({ status, finished_at: status === 'terminado' ? new Date().toISOString() : null })
+    .eq('id', projectId);
+  revalidatePath('/admin');
+}

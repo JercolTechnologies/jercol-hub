@@ -16,12 +16,98 @@ export interface ClientRow {
   created_at: string;
 }
 
+export type ProjectStatus = 'activo' | 'terminado';
+
 export interface Project {
   id: string;
   client_id: string;
   name: string;
+  status: ProjectStatus;
+  finished_at: string | null;
   created_at: string;
 }
+
+export interface ClientContact {
+  id: string;
+  client_id: string;
+  full_name: string;
+  phone: string | null;
+  email: string | null;
+  role_label: string | null;
+  is_legal_rep: boolean;
+  created_at: string;
+}
+
+export type ContractStatus =
+  | 'borrador'
+  | 'en_revision'
+  | 'aprobado'
+  | 'firmado_jercol'
+  | 'vigente'
+  | 'anulado';
+
+export interface Contract {
+  id: string;
+  client_id: string;
+  title: string;
+  status: ContractStatus;
+  signer_contact_id: string | null;
+  poder_path: string | null;
+  created_by: string | null;
+  created_at: string;
+  clients?: { name: string } | null;
+}
+
+export interface ContractVersion {
+  id: string;
+  contract_id: string;
+  version_number: number;
+  storage_path: string;
+  file_name: string;
+  size_bytes: number | null;
+  notes: string | null;
+  uploaded_by: string | null;
+  created_at: string;
+}
+
+export interface ContractComment {
+  id: string;
+  contract_id: string;
+  author_id: string | null;
+  body: string;
+  created_at: string;
+  author?: { full_name: string | null } | null;
+}
+
+export type AddendumChannel = 'whatsapp' | 'correo' | 'llamada' | 'otro';
+
+export interface ContractAddendum {
+  id: string;
+  contract_id: string;
+  agreed_on: string;
+  channel: AddendumChannel;
+  counterpart: string | null;
+  body: string;
+  evidence_path: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export const CONTRACT_STATUS_LABEL: Record<ContractStatus, string> = {
+  borrador: 'Borrador',
+  en_revision: 'En revisión',
+  aprobado: 'Aprobado (sin firmar)',
+  firmado_jercol: 'Firmado por Jercol',
+  vigente: 'Vigente',
+  anulado: 'Anulado',
+};
+
+export const ADDENDUM_CHANNEL_LABEL: Record<AddendumChannel, string> = {
+  whatsapp: 'WhatsApp',
+  correo: 'Correo',
+  llamada: 'Llamada',
+  otro: 'Otro',
+};
 
 export type TicketStatus =
   | 'solicitudes'

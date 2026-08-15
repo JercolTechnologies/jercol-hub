@@ -37,6 +37,19 @@ export default async function BoardPage({
 
   const isAdmin = profile.role === 'admin';
 
+  // Contrato asociado a este proyecto, para tenerlo a un click desde el tablero.
+  // La RLS filtra: el cliente no ve borradores.
+  const { data: contractLink } = await supabase
+    .from('contract_projects')
+    .select('contract_id, contracts(id, title, status)')
+    .eq('project_id', projectId)
+    .limit(1)
+    .maybeSingle();
+
+  const linkedContract = (contractLink as unknown as {
+    contracts: { id: string; title: string; status: string } | null;
+  } | null)?.contracts;
+
   return (
     <div className="flex flex-1 flex-col h-screen">
       <header className="bg-white border-b border-slate-200 px-5 py-3 flex items-center gap-3">
@@ -47,9 +60,25 @@ export default async function BoardPage({
           ← Volver
         </Link>
         <div className="flex-1">
-          <div className="font-semibold text-sm">{project.name}</div>
+          <div className="font-semibold text-sm">
+            {project.name}
+            {project.status === 'terminado' && (
+              <span className="ml-2 text-[11px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-normal">
+                Terminado
+              </span>
+            )}
+          </div>
           <div className="text-xs text-slate-500">{project.clients?.name}</div>
         </div>
+        {linkedContract && (
+          <Link
+            href={`/contratos/${linkedContract.id}`}
+            className="text-sm text-slate-500 hover:text-slate-800"
+            title={linkedContract.title}
+          >
+            📄 Contrato
+          </Link>
+        )}
         <Link href="/ideas" className="text-sm text-slate-500 hover:text-slate-800">
           Ideas de proyecto
         </Link>
