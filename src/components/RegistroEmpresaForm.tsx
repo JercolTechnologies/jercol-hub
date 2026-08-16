@@ -71,18 +71,18 @@ export default function RegistroEmpresaForm({
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-500 mb-1">
-            {juridica ? 'NIT' : 'Número de cédula'}
-          </label>
+          <label className="block text-xs font-semibold text-slate-500 mb-1">NIT</label>
           <input
             type="text"
             name="tax_id"
             required
             className="w-full rounded border border-slate-300 px-3 py-2 text-sm"
-            placeholder={juridica ? '900123456-7' : '1020304050'}
+            placeholder={juridica ? '900123456-7' : '50938826-5'}
           />
           <p className="text-[11px] text-slate-400 mt-1">
-            Debe coincidir con el que aparece en el RUT.
+            {juridica
+              ? 'Lo encuentras en tu RUT: casilla 5 (NIT) y casilla 6 (DV).'
+              : 'Tu NIT es tu número de cédula seguido del dígito de verificación. Si no estás seguro, míralo en tu RUT: casilla 5 (NIT) y casilla 6 (DV).'}
           </p>
         </div>
 

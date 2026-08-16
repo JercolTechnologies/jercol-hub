@@ -48,7 +48,7 @@ export default async function UnirmePage({
         <form action={unirmeAEmpresa} className="bg-white border border-slate-200 rounded-lg p-5 space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-500 mb-1">
-              NIT o cédula de la organización
+              NIT de la organización
             </label>
             <input
               type="text"
@@ -58,7 +58,8 @@ export default async function UnirmePage({
               placeholder="900123456-7"
             />
             <p className="text-[11px] text-slate-400 mt-1">
-              Pídeselo a quien registró la cuenta de tu empresa.
+              Pídeselo a quien registró la cuenta de tu organización. Puedes escribirlo con
+              puntos y guion o sin ellos.
             </p>
           </div>
 

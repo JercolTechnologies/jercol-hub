@@ -19,9 +19,16 @@ function err(msg: string, ruta: string): never {
   redirect(`${ruta}?error=${encodeURIComponent(msg)}`);
 }
 
-/** Deja solo dígitos y guion: los NIT suelen escribirse con puntos y espacios. */
+/**
+ * Deja solo dígitos.
+ *
+ * El mismo NIT se escribe de muchas formas: 900.123.456-7, 900123456 7,
+ * 9001234567. Si se guardaran tal cual, el índice único no reconocería que
+ * son el mismo, y la detección de duplicados —que es lo que impide registrar
+ * dos veces la misma organización— dejaría de servir.
+ */
 function normalizarDocumento(valor: string) {
-  return valor.replace(/[^0-9-]/g, '');
+  return valor.replace(/\D/g, '');
 }
 
 async function subirDocumento(
@@ -67,7 +74,7 @@ export async function registrarEmpresa(formData: FormData) {
   const consent = formData.get('data_consent') === 'on';
 
   if (!name) err('Escribe el nombre o razón social.', RUTA);
-  if (!taxId) err(kind === 'juridica' ? 'Escribe el NIT.' : 'Escribe el número de cédula.', RUTA);
+  if (!taxId) err('Escribe el NIT.', RUTA);
   if (!consent) err('Necesitamos tu autorización para tratar los documentos.', RUTA);
 
   const rut = formData.get('doc_rut') as File | null;
@@ -181,7 +188,7 @@ export async function unirmeAEmpresa(formData: FormData) {
   const taxId = normalizarDocumento(String(formData.get('tax_id') || ''));
   const jobTitle = String(formData.get('job_title') || '').trim();
 
-  if (!taxId) err('Escribe el NIT o cédula de la organización.', RUTA);
+  if (!taxId) err('Escribe el NIT de la organización.', RUTA);
   if (!jobTitle) err('Escribe tu cargo.', RUTA);
 
   // La RLS de clients solo deja ver la propia organización, así que la
