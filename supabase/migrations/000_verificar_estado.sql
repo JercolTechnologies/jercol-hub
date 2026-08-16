@@ -102,6 +102,25 @@ select
        )
        then 'OK' else 'FALTA' end
 
+union all
+select
+  '011_fix_registro_y_cedula',
+  case when exists (
+         select 1 from pg_policies
+         where tablename = 'clients' and policyname = 'clients_select_registrant'
+       )
+       then 'OK' else 'FALTA' end
+
+union all
+select
+  '012_documentos_via_servidor',
+  case when not exists (
+         select 1 from pg_policies
+         where tablename = 'objects' and policyname = 'storage_cdoc_insert'
+       )
+       and to_regclass('public.client_documents') is not null
+       then 'OK' else 'FALTA' end
+
 order by migracion;
 
 

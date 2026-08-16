@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { adminProfileIds, notifyMany, escapeHtml } from '@/lib/telegram/client';
 import type { ClientDocumentKind, ClientKind } from '@/lib/types';
 
@@ -31,26 +32,39 @@ function normalizarDocumento(valor: string) {
   return valor.replace(/\D/g, '');
 }
 
+/**
+ * Guarda un documento del expediente.
+ *
+ * Escribe con la clave de servicio, no con la sesión del usuario. El motivo:
+ * la política de subida del bucket tenía que consultar la tabla `clients`
+ * para saber si esta persona registró esa organización, y esa consulta queda
+ * a su vez sujeta a las políticas de `clients`. Políticas que dependen de
+ * otras políticas son frágiles y difíciles de depurar — fallan con un
+ * genérico "violates row-level security policy" que no dice cuál de las dos.
+ *
+ * Quién puede subir se decide aquí: la acción ya comprobó que este usuario
+ * acaba de crear ese cliente. La lectura sigue protegida por RLS.
+ */
 async function subirDocumento(
-  supabase: Awaited<ReturnType<typeof createClient>>,
   clientId: string,
   userId: string,
   file: File,
   kind: ClientDocumentKind
-) {
+): Promise<string | null> {
+  const admin = createAdminClient();
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
   const path = `${clientId}/${kind}-${Date.now()}-${safeName}`;
 
-  const { error: upErr } = await supabase.storage
+  const { error: upErr } = await admin.storage
     .from('client-documents')
     .upload(path, file, { contentType: file.type || undefined });
 
   if (upErr) {
-    console.error('subirDocumento:', upErr);
-    return false;
+    console.error('subirDocumento storage:', upErr);
+    return `no se pudo guardar el archivo (${upErr.message})`;
   }
 
-  const { error } = await supabase.from('client_documents').insert({
+  const { error } = await admin.from('client_documents').insert({
     client_id: clientId,
     kind,
     storage_path: path,
@@ -59,8 +73,12 @@ async function subirDocumento(
     uploaded_by: userId,
   });
 
-  if (error) console.error('registrar documento:', error);
-  return !error;
+  if (error) {
+    console.error('subirDocumento registro:', error);
+    return `no se pudo registrar el archivo (${error.message})`;
+  }
+
+  return null;
 }
 
 /** Alta de una empresa o persona natural nueva, con su expediente. */
@@ -125,13 +143,27 @@ export async function registrarEmpresa(formData: FormData) {
     err(`No se pudo registrar: ${cErr?.message ?? 'error desconocido'}`, RUTA);
   }
 
-  await subirDocumento(supabase, cliente.id, user.id, rut, 'rut');
-  await subirDocumento(supabase, cliente.id, user.id, cedulaFrente, 'cedula');
-  await subirDocumento(supabase, cliente.id, user.id, cedulaReverso, 'cedula_reverso');
+  // Un expediente sin documentos no sirve para nada: si falla alguno de los
+  // obligatorios, se deshace el registro completo en vez de dejar un cliente
+  // a medias que después nadie puede verificar.
+  const fallos = (
+    await Promise.all([
+      subirDocumento(cliente.id, user.id, rut, 'rut'),
+      subirDocumento(cliente.id, user.id, cedulaFrente, 'cedula'),
+      subirDocumento(cliente.id, user.id, cedulaReverso, 'cedula_reverso'),
+    ])
+  ).filter(Boolean);
+
+  if (fallos.length) {
+    const admin = createAdminClient();
+    await admin.from('clients').delete().eq('id', cliente.id);
+    err(`No se pudieron guardar los documentos: ${fallos[0]}. Inténtalo de nuevo.`, RUTA);
+  }
 
   const camara = formData.get('doc_camara') as File | null;
   if (camara && camara.size > 0) {
-    await subirDocumento(supabase, cliente.id, user.id, camara, 'camara');
+    // Es opcional: si falla, no se tumba el registro entero.
+    await subirDocumento(cliente.id, user.id, camara, 'camara');
   }
 
   // Quien registra queda como responsable de la cuenta de su organización.
