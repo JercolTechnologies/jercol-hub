@@ -40,7 +40,7 @@ export interface ClientRow {
   created_at: string;
 }
 
-export type ClientDocumentKind = 'rut' | 'cedula' | 'camara' | 'otro';
+export type ClientDocumentKind = 'rut' | 'cedula' | 'cedula_reverso' | 'camara' | 'otro';
 
 export interface ClientDocument {
   id: string;
@@ -55,7 +55,8 @@ export interface ClientDocument {
 
 export const CLIENT_DOC_LABEL: Record<ClientDocumentKind, string> = {
   rut: 'RUT',
-  cedula: 'Cédula',
+  cedula: 'Cédula (frente)',
+  cedula_reverso: 'Cédula (reverso)',
   camara: 'Cámara de Comercio',
   otro: 'Otro',
 };

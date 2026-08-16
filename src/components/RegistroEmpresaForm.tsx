@@ -20,10 +20,11 @@ export default function RegistroEmpresaForm({
   const [esRep, setEsRep] = useState(true);
   const [rutOk, setRutOk] = useState(false);
   const [cedulaOk, setCedulaOk] = useState(false);
+  const [cedulaRevOk, setCedulaRevOk] = useState(false);
   const [consent, setConsent] = useState(false);
 
   const juridica = kind === 'juridica';
-  const listo = rutOk && cedulaOk && consent;
+  const listo = rutOk && cedulaOk && cedulaRevOk && consent;
 
   return (
     <form action={action} className="space-y-5">
@@ -207,9 +208,12 @@ export default function RegistroEmpresaForm({
 
         <div>
           <div className="text-xs text-slate-600 mb-1">
-            Cédula {juridica ? 'del representante legal' : ''} (obligatorio)
+            Cédula {juridica ? 'del representante legal' : ''} — ambas caras (obligatorio)
           </div>
-          <FileField name="doc_cedula" label="Adjuntar cédula" onSelect={setCedulaOk} />
+          <div className="space-y-2">
+            <FileField name="doc_cedula" label="Cara frontal" onSelect={setCedulaOk} />
+            <FileField name="doc_cedula_reverso" label="Reverso" onSelect={setCedulaRevOk} />
+          </div>
         </div>
 
         {juridica && (

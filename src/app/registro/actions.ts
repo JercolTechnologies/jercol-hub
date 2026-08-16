@@ -71,9 +71,12 @@ export async function registrarEmpresa(formData: FormData) {
   if (!consent) err('Necesitamos tu autorización para tratar los documentos.', RUTA);
 
   const rut = formData.get('doc_rut') as File | null;
-  const cedula = formData.get('doc_cedula') as File | null;
+  const cedulaFrente = formData.get('doc_cedula') as File | null;
+  const cedulaReverso = formData.get('doc_cedula_reverso') as File | null;
   if (!rut || rut.size === 0) err('Adjunta el RUT.', RUTA);
-  if (!cedula || cedula.size === 0) err('Adjunta la cédula.', RUTA);
+  if (!cedulaFrente || cedulaFrente.size === 0) err('Adjunta la cara frontal de la cédula.', RUTA);
+  if (!cedulaReverso || cedulaReverso.size === 0)
+    err('Adjunta el reverso de la cédula.', RUTA);
 
   // Se comprueba antes de insertar para poder dar un mensaje entendible.
   // El índice único de la base es la garantía real si dos personas envían
@@ -110,11 +113,14 @@ export async function registrarEmpresa(formData: FormData) {
 
   if (cErr || !cliente) {
     console.error('registrarEmpresa:', cErr);
-    err('No se pudo registrar. Revisa los datos e inténtalo de nuevo.', RUTA);
+    // Se muestra el detalle real: un "algo falló" genérico obliga a ir a
+    // buscar los logs del servidor para saber qué pasó.
+    err(`No se pudo registrar: ${cErr?.message ?? 'error desconocido'}`, RUTA);
   }
 
   await subirDocumento(supabase, cliente.id, user.id, rut, 'rut');
-  await subirDocumento(supabase, cliente.id, user.id, cedula, 'cedula');
+  await subirDocumento(supabase, cliente.id, user.id, cedulaFrente, 'cedula');
+  await subirDocumento(supabase, cliente.id, user.id, cedulaReverso, 'cedula_reverso');
 
   const camara = formData.get('doc_camara') as File | null;
   if (camara && camara.size > 0) {
