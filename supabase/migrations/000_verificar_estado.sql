@@ -121,6 +121,30 @@ select
        and to_regclass('public.client_documents') is not null
        then 'OK' else 'FALTA' end
 
+union all
+select
+  '013_blindar_perfiles_y_estados',
+  case when exists (
+         select 1 from pg_trigger where tgname = 'on_profile_update_rules'
+       )
+       and exists (
+         select 1 from pg_trigger where tgname = 'on_project_check_verified'
+       )
+       then 'OK' else 'FALTA' end
+
+union all
+select
+  '014_coherencia_verificacion',
+  case when exists (
+         select 1 from pg_trigger where tgname = 'trg_client_verification_fields'
+       )
+       and exists (
+         select 1 from pg_proc
+         where proname = 'buscar_cliente_por_documento'
+           and prosrc like '%archived%'
+       )
+       then 'OK' else 'FALTA' end
+
 order by migracion;
 
 

@@ -58,7 +58,15 @@ export async function assignUser(formData: FormData) {
   const userId = String(formData.get('user_id') || '');
   const clientId = String(formData.get('client_id') || '');
   if (!userId || !clientId) return;
-  await supabase.from('profiles').update({ client_id: clientId }).eq('id', userId);
+
+  // Se fuerza member_status: si la cuenta venía de un rechazo o de una
+  // solicitud pendiente, asignarla sin activarla la dejaba dentro de la
+  // organización pero sin ver nada, porque my_client_id() exige miembro activo.
+  await supabase
+    .from('profiles')
+    .update({ client_id: clientId, member_status: 'activo' })
+    .eq('id', userId);
+
   revalidatePath('/admin');
 }
 
@@ -99,6 +107,12 @@ export async function deleteContact(contactId: string) {
  *
  * Queda constancia de quién verificó y cuándo: eso es lo que después sostiene
  * que la firma del contrato la hizo el representante legal y no cualquiera.
+ *
+ * No hace falta limpiar verified_at, verified_by ni rejection_reason al
+ * rechazar: el trigger trg_client_verification_fields (migración 014) los
+ * deja coherentes con el estado pase lo que pase. Se hizo así a propósito,
+ * para que la coherencia no dependa de que quien escriba la próxima función
+ * que toque `status` se acuerde de limpiarlos.
  */
 export async function verificarCliente(clientId: string, formData: FormData) {
   const supabase = await requireAdmin();
@@ -143,6 +157,38 @@ export async function verificarCliente(clientId: string, formData: FormData) {
       aprobar
         ? '✅ <b>Registro verificado</b>\nYa puedes empezar a trabajar en Jercol Hub.'
         : `⚠️ <b>Registro no verificado</b>\n${motivo}`
+    );
+  }
+
+  revalidatePath('/admin');
+}
+
+/**
+ * Devuelve un cliente rechazado a la cola de verificación.
+ *
+ * El rechazo se diseñó como un final y en la práctica casi siempre va a ser
+ * "te faltó un papel". Sin esta vuelta atrás, un rechazo por error dejaba al
+ * cliente sin salida: tendría que registrarse con otro correo y otro NIT.
+ */
+export async function reabrirVerificacion(clientId: string) {
+  const supabase = await requireAdmin();
+
+  await supabase
+    .from('clients')
+    .update({ status: 'pendiente', rejection_reason: null })
+    .eq('id', clientId);
+
+  const { data: miembros } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('client_id', clientId);
+
+  const ids = (miembros || []).map((m) => m.id as string);
+  if (ids.length) {
+    await notifyMany(
+      ids,
+      `client-reabierto:${clientId}:${Date.now()}`,
+      '🔄 <b>Registro reabierto</b>\nPuedes corregir o volver a subir tus documentos.'
     );
   }
 

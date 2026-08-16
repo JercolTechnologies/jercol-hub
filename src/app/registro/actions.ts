@@ -7,12 +7,30 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { adminProfileIds, notifyMany, escapeHtml } from '@/lib/telegram/client';
 import type { ClientDocumentKind, ClientKind } from '@/lib/types';
 
+/**
+ * Exige sesión y que la cuenta todavía no pertenezca a ninguna organización.
+ *
+ * Las páginas ya redirigen a quien tiene organización, pero una página no es
+ * un control: las Server Actions se pueden invocar directamente. Sin esta
+ * comprobación, alguien que ya está dentro de una empresa podría registrar
+ * otra o pedir unirse a una ajena, saliéndose de la suya en el intento.
+ */
 async function requireUser() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect('/login');
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('client_id, role')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  if (profile?.role === 'admin') redirect('/admin');
+  if (profile?.client_id) redirect('/');
+
   return { supabase, user };
 }
 
@@ -167,7 +185,11 @@ export async function registrarEmpresa(formData: FormData) {
   }
 
   // Quien registra queda como responsable de la cuenta de su organización.
-  await supabase
+  // Va con la clave de servicio porque client_id, is_owner y member_status
+  // están bloqueados desde el navegador (ver migración 013): si se pudieran
+  // cambiar desde el cliente, cualquiera se auto-aprobaría o se movería de
+  // organización.
+  await createAdminClient()
     .from('profiles')
     .update({
       client_id: cliente.id,
@@ -239,7 +261,7 @@ export async function unirmeAEmpresa(formData: FormData) {
     );
   }
 
-  await supabase
+  await createAdminClient()
     .from('profiles')
     .update({
       client_id: cliente.id as string,

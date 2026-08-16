@@ -21,6 +21,7 @@ import {
   setProjectStatus,
   linkContactProfile,
   verificarCliente,
+  reabrirVerificacion,
 } from './actions';
 
 type ProjectWithClient = Project & { clients: { name: string } | null };
@@ -78,8 +79,9 @@ export default async function AdminPage() {
   if (!profile || profile.role !== 'admin') redirect('/');
 
   const allClients = clients || [];
-  const porVerificar = allClients.filter((c) => c.status === 'pendiente');
-  const activeClients = allClients.filter((c) => !c.archived && c.status !== 'pendiente');
+  const porVerificar = allClients.filter((c) => c.status === 'pendiente' && !c.archived);
+  const rechazados = allClients.filter((c) => c.status === 'rechazado' && !c.archived);
+  const activeClients = allClients.filter((c) => !c.archived && c.status === 'verificado');
   const archivedClients = allClients.filter((c) => c.archived);
 
   const docsByClient = new Map<string, ClientDocument[]>();
@@ -111,16 +113,48 @@ export default async function AdminPage() {
   });
 
   function ClientCard({ c }: { c: ClientRow }) {
+    const rechazado = c.status === 'rechazado';
+
     return (
-      <div className="bg-white border border-slate-200 rounded-lg p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-medium">{c.name}</h3>
+      <div
+        className={`bg-white border rounded-lg p-4 ${
+          rechazado ? 'border-red-200' : 'border-slate-200'
+        }`}
+      >
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <div>
+            <h3 className="font-medium flex items-center gap-2">
+              {c.name}
+              {/* El estado siempre visible: un cliente rechazado se veía igual
+                  que uno verificado y eso llevaba a operar con él sin querer. */}
+              <span
+                className={`text-[11px] px-1.5 py-0.5 rounded font-semibold ${
+                  rechazado ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'
+                }`}
+              >
+                {CLIENT_STATUS_LABEL[c.status]}
+              </span>
+            </h3>
+            {c.tax_id && <div className="text-xs text-slate-500">{c.tax_id}</div>}
+          </div>
           <form action={setClientArchived.bind(null, c.id, !c.archived)}>
-            <button type="submit" className="text-xs text-slate-500 hover:underline">
+            <button type="submit" className="text-xs text-slate-500 hover:underline cursor-pointer">
               {c.archived ? 'Desarchivar' : 'Archivar'}
             </button>
           </form>
         </div>
+
+        {rechazado && (
+          <div className="text-xs bg-red-50 text-red-700 rounded px-3 py-2 mb-3">
+            <div className="font-medium mb-1">Motivo: {c.rejection_reason || 'sin motivo'}</div>
+            El cliente puede corregir y reenviar. También puedes devolverlo tú a la cola.
+            <form action={reabrirVerificacion.bind(null, c.id)} className="mt-2">
+              <button className="text-xs px-2.5 py-1 rounded bg-white border border-red-200 hover:bg-red-100 cursor-pointer">
+                Devolver a pendiente
+              </button>
+            </form>
+          </div>
+        )}
         <ul className="space-y-1 mb-3">
           {(projectsByClient.get(c.id) || []).map((p) => (
             <li key={p.id} className="flex items-center gap-2">
@@ -150,7 +184,10 @@ export default async function AdminPage() {
             <li className="text-sm text-slate-400">Sin proyectos todavía.</li>
           )}
         </ul>
-        {!c.archived && (
+        {/* Solo se crean proyectos para clientes verificados. La base de datos
+            también lo impide (trigger de la migración 013), pero mostrar el
+            formulario invitaba a intentarlo. */}
+        {!c.archived && c.status === 'verificado' && (
           <form action={createProject.bind(null, c.id)} className="flex gap-2 mb-4">
             <input
               type="text"
@@ -470,6 +507,19 @@ export default async function AdminPage() {
           ))}
         </div>
       </section>
+
+        {rechazados.length > 0 && (
+          <details className="mb-10">
+            <summary className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3 cursor-pointer">
+              Rechazados ({rechazados.length})
+            </summary>
+            <div className="space-y-6 mt-3">
+              {rechazados.map((c) => (
+                <ClientCard key={c.id} c={c} />
+              ))}
+            </div>
+          </details>
+        )}
 
         {archivedClients.length > 0 && (
           <details className="mb-10">

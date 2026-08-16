@@ -111,13 +111,16 @@ export default async function Home() {
   }
 
   if (cliente?.status === 'rechazado') {
+    // Quien registró la organización puede corregir y reenviar. El resto del
+    // equipo no: no tiene por qué manejar los documentos de la empresa.
+    if (profile.is_owner) redirect('/registro/corregir');
+
     return (
       <Aviso
         titulo="No pudimos verificar el registro"
-        texto={
-          cliente.rejection_reason ||
-          'Hubo un problema con los documentos aportados. Escríbenos para resolverlo.'
-        }
+        texto={`${
+          cliente.rejection_reason || 'Hubo un problema con los documentos aportados.'
+        } Habla con quien registró la cuenta de tu organización para que lo corrija.`}
       />
     );
   }
