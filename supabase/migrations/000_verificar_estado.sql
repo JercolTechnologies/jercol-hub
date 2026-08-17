@@ -145,6 +145,26 @@ select
        )
        then 'OK' else 'FALTA' end
 
+union all
+select
+  '015_triggers_no_bloquean_cascadas',
+  case when exists (
+         select 1 from pg_proc
+         where proname = 'enforce_profile_field_rules'
+           and prosrc like '%auth.uid() is null%'
+       )
+       and exists (
+         select 1 from pg_proc
+         where proname = 'enforce_ticket_rules'
+           and prosrc like '%auth.uid() is null%'
+       )
+       and exists (
+         select 1 from pg_proc
+         where proname = 'enforce_contract_immutability'
+           and prosrc like '%created_by%'
+       )
+       then 'OK' else 'FALTA' end
+
 order by migracion;
 
 
