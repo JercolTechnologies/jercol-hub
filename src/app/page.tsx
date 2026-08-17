@@ -35,8 +35,11 @@ export default async function Home() {
   // El perfil y los proyectos van en paralelo: la política RLS de projects ya
   // limita al cliente a los suyos, así que la consulta no necesita esperar a
   // conocer el client_id del perfil.
-  const [{ data: profile }, { data: projects }] = await Promise.all([
-    supabase.from('profiles').select('*').eq('id', user.id).single<Profile>(),
+  const [{ data: profile, error: profileError }, { data: projects }] = await Promise.all([
+    // maybeSingle y no single: con single, "no hay filas" también llega como
+    // error (PGRST116), y entonces no se puede distinguir un perfil que falta
+    // de una consulta que falló. Con maybeSingle, un error es un error.
+    supabase.from('profiles').select('*').eq('id', user.id).maybeSingle<Profile>(),
     supabase
       .from('projects')
       .select('*')
@@ -44,11 +47,38 @@ export default async function Home() {
       .returns<Project[]>(),
   ]);
 
+  // No redirigir a /login en ninguno de los dos casos de abajo: el usuario ya
+  // está autenticado, así que el proxy lo rebotaría de vuelta a "/" y quedaría
+  // en bucle.
+
+  // Caso 1: la consulta falló. Antes esto se presentaba como "no se encontró
+  // tu perfil", que es un diagnóstico inventado: la app no había comprobado
+  // que el perfil faltara, solo que no lo tenía. Mandó a buscar el problema
+  // en el sitio equivocado.
+  if (profileError) {
+    console.error('Home: no se pudo leer el perfil:', profileError);
+    return (
+      <div className="flex flex-1 items-center justify-center px-4">
+        <div className="max-w-sm text-center">
+          <h1 className="text-lg font-semibold mb-2">No pudimos cargar tu cuenta</h1>
+          <p className="text-sm text-slate-500 mb-4">
+            Hubo un problema al leer tus datos. Vuelve a intentarlo en un momento; si
+            sigue pasando, avísanos con este detalle:
+          </p>
+          <p className="text-xs text-slate-400 font-mono mb-4 break-words">
+            {profileError.message}
+          </p>
+          <Link href="/" className="text-sm text-blue-600 hover:underline">
+            Reintentar
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Caso 2: la consulta funcionó y de verdad no hay perfil. Pasa si el trigger
+  // que lo crea no corrió para esta cuenta.
   if (!profile) {
-    // No redirigir a /login aquí: el usuario ya está autenticado, así que el
-    // middleware lo rebotaría de vuelta a "/" y quedaría en loop infinito.
-    // Esto pasa si el trigger que crea el perfil no corrió para esta cuenta
-    // (p. ej. se registró antes de que existiera el trigger en Supabase).
     return (
       <div className="flex flex-1 items-center justify-center px-4">
         <div className="max-w-sm text-center">
@@ -58,7 +88,7 @@ export default async function Home() {
             Contacta al administrador para que lo revise.
           </p>
           <form action="/logout" method="post">
-            <button className="text-sm text-blue-600 hover:underline" type="submit">
+            <button className="text-sm text-blue-600 hover:underline cursor-pointer" type="submit">
               Cerrar sesión
             </button>
           </form>

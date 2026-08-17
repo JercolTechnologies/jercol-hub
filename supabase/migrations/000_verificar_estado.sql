@@ -165,6 +165,14 @@ select
        )
        then 'OK' else 'FALTA' end
 
+union all
+select
+  '016_perfil_sin_organizacion',
+  case when exists (
+         select 1 from pg_trigger where tgname = 'trg_profile_coherence'
+       )
+       then 'OK' else 'FALTA' end
+
 order by migracion;
 
 

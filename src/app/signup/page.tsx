@@ -21,6 +21,40 @@ export default async function SignupPage({
         )}
 
         <form action={signup} className="space-y-4">
+          <fieldset>
+            <legend className="block text-xs font-medium text-slate-600 mb-2">
+              ¿Cuál es tu caso?
+            </legend>
+            <div className="space-y-2">
+              <label className="flex gap-3 items-start border border-slate-200 rounded-lg p-3 cursor-pointer hover:border-blue-400 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/50">
+                <input
+                  type="radio"
+                  name="camino"
+                  value="empresa"
+                  defaultChecked
+                  className="mt-0.5 cursor-pointer"
+                />
+                <span className="text-sm">
+                  <span className="font-medium block">Registro mi organización</span>
+                  <span className="text-slate-500 text-xs">
+                    Eres el primero de tu empresa, o trabajas como persona natural. Ten a mano
+                    el RUT y la cédula.
+                  </span>
+                </span>
+              </label>
+
+              <label className="flex gap-3 items-start border border-slate-200 rounded-lg p-3 cursor-pointer hover:border-blue-400 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/50">
+                <input type="radio" name="camino" value="unirme" className="mt-0.5 cursor-pointer" />
+                <span className="text-sm">
+                  <span className="font-medium block">Me uno a una ya registrada</span>
+                  <span className="text-slate-500 text-xs">
+                    Alguien de tu empresa la registró antes. Solo necesitas su NIT.
+                  </span>
+                </span>
+              </label>
+            </div>
+          </fieldset>
+
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Nombre</label>
             <input

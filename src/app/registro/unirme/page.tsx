@@ -30,8 +30,10 @@ export default async function UnirmePage({
   return (
     <div className="flex flex-1 justify-center px-4 py-10">
       <div className="w-full max-w-md">
-        <Link href="/registro" className="text-sm text-slate-500 hover:underline">
-          ← Volver
+        {/* Con ?elegir=1, porque /registro a secas vuelve a enrutar aquí según
+            el camino elegido al crear la cuenta, y sería un bucle. */}
+        <Link href="/registro?elegir=1" className="text-sm text-slate-500 hover:underline">
+          ← Esto no es lo que buscaba
         </Link>
 
         <h1 className="text-xl font-semibold mt-4 mb-1">Unirme a una organización</h1>

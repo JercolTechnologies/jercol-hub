@@ -5,7 +5,12 @@ import type { Profile } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
-export default async function RegistroPage() {
+export default async function RegistroPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ elegir?: string }>;
+}) {
+  const { elegir } = await searchParams;
   const supabase = await createClient();
 
   const {
@@ -13,15 +18,31 @@ export default async function RegistroPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const { data: profile } = await supabase
+  const { data: profile, error } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', user.id)
-    .single<Profile>();
+    .maybeSingle<Profile>();
+
+  // Si la lectura falla no se bloquea el paso: se muestran las dos opciones y
+  // se sigue. Es seguro porque las Server Actions de registro comprueban por
+  // su cuenta que quien las llama no tenga ya organización — una página no es
+  // un control.
+  if (error) console.error('RegistroPage: no se pudo leer el perfil:', error);
 
   // Quien ya tiene organización no vuelve por aquí.
   if (profile?.client_id) redirect('/');
   if (profile?.role === 'admin') redirect('/admin');
+
+  // El camino se eligió al crear la cuenta, así que normalmente no hay nada
+  // que preguntar: se enruta directo. Esta pantalla queda como salida para
+  // quien quiera cambiar de camino (?elegir=1) y como respaldo para las
+  // cuentas creadas antes de que la elección existiera.
+  if (!elegir) {
+    const camino = user.user_metadata?.camino;
+    if (camino === 'empresa') redirect('/registro/empresa');
+    if (camino === 'unirme') redirect('/registro/unirme');
+  }
 
   return (
     <div className="flex flex-1 items-center justify-center px-4 py-10">
