@@ -60,6 +60,20 @@ body {
   color: var(--color-tinta);
 }
 
+/* Entrada del aviso flotante. En CSS y no con estado de React: hacer que un
+   componente se anime cambiando estado dentro de un efecto es justo lo que
+   desaconseja react-hooks/set-state-in-effect, y aquí no hace falta. */
+@keyframes aviso-entra {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* Los botones nativos traen cursor: default. En una aplicación donde todo lo
    pulsable es un botón, eso hace que nada parezca pulsable. */
 button:not(:disabled),

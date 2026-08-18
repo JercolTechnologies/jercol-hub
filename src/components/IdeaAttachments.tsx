@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import AvisoFlotante, { useMensaje } from '@/components/AvisoFlotante';
 import { createClient } from '@/lib/supabase/client';
 import type { IdeaAttachment } from '@/lib/types';
 
@@ -23,6 +24,7 @@ export default function IdeaAttachments({
   canUpload: boolean;
 }) {
   const supabase = createClient();
+  const { mensaje, mostrar, limpiar } = useMensaje();
   const [attachments, setAttachments] = useState<IdeaAttachment[]>([]);
   const [uploading, setUploading] = useState(false);
 
@@ -54,7 +56,7 @@ export default function IdeaAttachments({
       const path = `${ideaId}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
       const { error: upErr } = await supabase.storage.from('idea-attachments').upload(path, file);
       if (upErr) {
-        alert('No se pudo subir ' + file.name + ': ' + upErr.message);
+        mostrar('No se pudo subir ' + file.name + ': ' + upErr.message);
         continue;
       }
       const { error: insErr } = await supabase.from('idea_attachments').insert({
@@ -65,7 +67,7 @@ export default function IdeaAttachments({
         size_bytes: file.size,
         content_type: file.type,
       });
-      if (insErr) alert('Se subió el archivo pero no se registró: ' + insErr.message);
+      if (insErr) mostrar('Se subió el archivo pero no se registró: ' + insErr.message);
     }
     setUploading(false);
     load();
@@ -76,7 +78,7 @@ export default function IdeaAttachments({
       .from('idea-attachments')
       .createSignedUrl(a.storage_path, 60);
     if (error || !data) {
-      alert('No se pudo generar el link: ' + (error?.message || ''));
+      mostrar('No se pudo generar el link: ' + (error?.message || ''));
       return;
     }
     window.open(data.signedUrl, '_blank');
@@ -87,18 +89,18 @@ export default function IdeaAttachments({
     await supabase.storage.from('idea-attachments').remove([a.storage_path]);
     const { error } = await supabase.from('idea_attachments').delete().eq('id', a.id);
     if (error) {
-      alert('No se pudo eliminar: ' + error.message);
+      mostrar('No se pudo eliminar: ' + error.message);
       return;
     }
     load();
   }
 
   return (
-    <div className="border-t border-slate-200 pt-4 mb-4">
+    <div className="border-t border-borde pt-4 mb-4">
       <div className="flex items-center justify-between mb-2">
-        <label className="text-xs font-semibold text-slate-500">Archivos adjuntos</label>
+        <label className="text-xs font-semibold text-tinta-suave">Archivos adjuntos</label>
         {canUpload && (
-          <label className="text-xs text-blue-600 hover:underline cursor-pointer">
+          <label className="text-xs text-azul hover:underline cursor-pointer">
             {uploading ? 'Subiendo...' : '+ Subir'}
             <input
               type="file"
@@ -111,21 +113,21 @@ export default function IdeaAttachments({
         )}
       </div>
       {attachments.length === 0 && (
-        <div className="text-xs text-slate-400">Sin archivos todavía.</div>
+        <div className="text-xs text-tinta-suave/80">Sin archivos todavía.</div>
       )}
       <ul className="space-y-1">
         {attachments.map((a) => (
           <li key={a.id} className="flex items-center gap-2 text-sm">
             <button
-              className="text-blue-600 hover:underline text-left truncate cursor-pointer"
+              className="text-azul hover:underline text-left truncate cursor-pointer"
               onClick={() => download(a)}
             >
               {a.file_name}
             </button>
-            <span className="text-[11px] text-slate-400">{formatBytes(a.size_bytes)}</span>
+            <span className="text-[11px] text-tinta-suave/80">{formatBytes(a.size_bytes)}</span>
             {(isAdmin || a.uploaded_by === currentUserId) && (
               <button
-                className="text-[11px] text-red-500 hover:underline ml-auto cursor-pointer"
+                className="text-[11px] text-alerta hover:underline ml-auto cursor-pointer"
                 onClick={() => remove(a)}
               >
                 eliminar
@@ -134,6 +136,8 @@ export default function IdeaAttachments({
           </li>
         ))}
       </ul>
+
+      <AvisoFlotante mensaje={mensaje} onCerrar={limpiar} />
     </div>
   );
 }

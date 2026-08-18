@@ -1,5 +1,6 @@
 'use client';
 
+import AvisoFlotante, { useMensaje } from '@/components/AvisoFlotante';
 import { createClient } from '@/lib/supabase/client';
 
 /**
@@ -8,6 +9,7 @@ import { createClient } from '@/lib/supabase/client';
  */
 export default function ClientDocLink({ path, label }: { path: string; label: string }) {
   const supabase = createClient();
+  const { mensaje, mostrar, limpiar } = useMensaje();
 
   async function abrir() {
     const { data, error } = await supabase.storage
@@ -15,19 +17,22 @@ export default function ClientDocLink({ path, label }: { path: string; label: st
       .createSignedUrl(path, 120);
 
     if (error || !data) {
-      alert('No se pudo abrir el documento: ' + (error?.message || ''));
+      mostrar('No se pudo abrir el documento: ' + (error?.message || ''));
       return;
     }
     window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
   }
 
   return (
-    <button
-      type="button"
-      onClick={abrir}
-      className="text-sm text-blue-600 hover:underline cursor-pointer text-left"
-    >
-      {label}
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={abrir}
+        className="text-sm text-azul hover:underline text-left"
+      >
+        {label}
+      </button>
+      <AvisoFlotante mensaje={mensaje} onCerrar={limpiar} />
+    </>
   );
 }

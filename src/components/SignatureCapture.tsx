@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import AvisoFlotante, { useMensaje } from '@/components/AvisoFlotante';
 
 type Mode = 'subir' | 'dibujar' | 'escribir';
 
@@ -20,6 +21,7 @@ export default function SignatureCapture({
   typedNameDefault?: string;
   onChange?: (hasSignature: boolean) => void;
 }) {
+  const { mensaje, mostrar, limpiar } = useMensaje();
   const [mode, setMode] = useState<Mode>('dibujar');
   const [dataUrl, setDataUrl] = useState('');
   const [typed, setTyped] = useState(typedNameDefault);
@@ -114,7 +116,7 @@ export default function SignatureCapture({
   function handleFile(file: File | undefined) {
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      alert('La firma debe ser una imagen (PNG o JPG).');
+      mostrar('La firma debe ser una imagen (PNG o JPG).');
       return;
     }
     const reader = new FileReader();
@@ -152,8 +154,8 @@ export default function SignatureCapture({
             onClick={() => switchMode(t.key)}
             className={`text-xs px-2.5 py-1 rounded cursor-pointer ${
               mode === t.key
-                ? 'bg-slate-800 text-white'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                ? 'bg-negro-suave text-white'
+                : 'bg-lienzo text-tinta hover:bg-lienzo'
             }`}
           >
             {t.label}
@@ -171,12 +173,12 @@ export default function SignatureCapture({
             onPointerMove={moveDraw}
             onPointerUp={endDraw}
             onPointerLeave={endDraw}
-            className="w-full border border-slate-300 rounded bg-white touch-none cursor-crosshair"
+            className="w-full border border-borde rounded bg-tarjeta touch-none cursor-crosshair"
           />
           <button
             type="button"
             onClick={clearCanvas}
-            className="text-xs text-slate-500 hover:underline mt-1 cursor-pointer"
+            className="text-xs text-tinta-suave hover:underline mt-1 cursor-pointer"
           >
             Limpiar
           </button>
@@ -185,7 +187,7 @@ export default function SignatureCapture({
 
       {mode === 'subir' && (
         <div>
-          <label className="text-sm px-3 py-1.5 rounded border border-slate-300 hover:bg-slate-50 cursor-pointer inline-block">
+          <label className="text-sm px-3 py-1.5 rounded border border-borde hover:bg-lienzo cursor-pointer inline-block">
             Elegir imagen de firma
             <input
               type="file"
@@ -199,7 +201,7 @@ export default function SignatureCapture({
             <img
               src={dataUrl}
               alt="Firma"
-              className="mt-2 max-h-24 border border-slate-200 rounded bg-white"
+              className="mt-2 max-h-24 border border-borde rounded bg-tarjeta"
             />
           )}
         </div>
@@ -212,18 +214,20 @@ export default function SignatureCapture({
             value={typed}
             onChange={(e) => renderTyped(e.target.value)}
             placeholder="Escribe tu nombre completo"
-            className="w-full rounded border border-slate-300 px-3 py-2 text-sm"
+            className="w-full rounded border border-borde px-3 py-2 text-sm"
           />
           {dataUrl && (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={dataUrl}
               alt="Firma generada"
-              className="mt-2 max-h-24 border border-slate-200 rounded bg-white"
+              className="mt-2 max-h-24 border border-borde rounded bg-tarjeta"
             />
           )}
         </div>
       )}
+
+      <AvisoFlotante mensaje={mensaje} onCerrar={limpiar} />
     </div>
   );
 }

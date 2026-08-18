@@ -1,6 +1,9 @@
 import { redirect } from 'next/navigation';
 import AppHeader from '@/components/AppHeader';
+import Aviso from '@/components/Aviso';
 import InfoTip from '@/components/InfoTip';
+import Seccion from '@/components/Seccion';
+import { Boton } from '@/components/Campo';
 import { createClient } from '@/lib/supabase/server';
 import type { ClientRow, Profile } from '@/lib/types';
 import { resolverSolicitud, quitarMiembro } from './actions';
@@ -45,99 +48,91 @@ export default async function EquipoPage({
   return (
     <>
       <AppHeader isAdmin={false} isOwner />
-      <div className="flex-1 max-w-3xl mx-auto w-full px-4 py-8">
-        <h1 className="text-xl font-semibold mb-1 flex items-center gap-2">
-          Equipo
-          <InfoTip text="Las personas de tu organización que pueden ver y trabajar en los proyectos. Tú decides quién entra." />
-        </h1>
-        <p className="text-sm text-slate-500 mb-6">{cliente?.name}</p>
+      <div className="flex-1 max-w-3xl mx-auto w-full px-4 py-8 space-y-5">
+        <div>
+          <h1 className="text-xl font-semibold flex items-center gap-2">
+            Equipo
+            <InfoTip text="Las personas de tu organización que pueden ver y trabajar en los proyectos. Tú decides quién entra." />
+          </h1>
+          <p className="text-sm text-tinta-suave mt-1">{cliente?.name}</p>
+        </div>
 
-        {ok && (
-          <div className="mb-4 text-sm text-emerald-800 bg-emerald-50 border border-emerald-100 rounded px-3 py-2">
-            {ok}
-          </div>
-        )}
-        {error && (
-          <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded px-3 py-2">
-            {error}
-          </div>
-        )}
+        {ok && <Aviso tipo="exito">{ok}</Aviso>}
+        {error && <Aviso>{error}</Aviso>}
 
         {pendientes.length > 0 && (
-          <section className="mb-8">
-            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">
-              Solicitudes por aprobar ({pendientes.length})
-            </h2>
+          <Seccion titulo={`Solicitudes por aprobar (${pendientes.length})`}>
             <div className="space-y-2">
               {pendientes.map((m) => (
                 <div
                   key={m.id}
-                  className="flex items-center gap-3 bg-white border border-amber-200 rounded-lg px-4 py-3"
+                  className="flex flex-wrap items-center gap-3 border border-aviso/30 bg-aviso-fondo rounded-lg px-4 py-3"
                 >
-                  <div className="flex-1 text-sm">
+                  <div className="flex-1 min-w-[12rem] text-sm">
                     <div className="font-medium">{m.full_name || 'Sin nombre'}</div>
-                    <div className="text-slate-500 text-xs">
+                    <div className="text-tinta-suave text-xs">
                       {m.email}
                       {m.job_title ? ` · ${m.job_title}` : ''}
                     </div>
                   </div>
                   <form action={resolverSolicitud.bind(null, m.id, true)}>
-                    <button className="text-sm px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer">
+                    <Boton
+                      type="submit"
+                      className="bg-verde-oscuro hover:bg-exito text-white text-sm px-3 py-1.5"
+                      variante="principal"
+                    >
                       Aprobar
-                    </button>
+                    </Boton>
                   </form>
                   <form action={resolverSolicitud.bind(null, m.id, false)}>
-                    <button className="text-sm px-3 py-1.5 rounded border border-slate-300 hover:bg-slate-50 cursor-pointer">
+                    <Boton type="submit" variante="secundario" className="text-sm px-3 py-1.5">
                       Rechazar
-                    </button>
+                    </Boton>
                   </form>
                 </div>
               ))}
             </div>
-          </section>
+          </Seccion>
         )}
 
-        <section>
-          <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">
-            Con acceso ({activos.length})
-          </h2>
+        <Seccion titulo={`Con acceso (${activos.length})`}>
           <div className="space-y-2">
             {activos.map((m) => (
               <div
                 key={m.id}
-                className="flex items-center gap-3 bg-white border border-slate-200 rounded-lg px-4 py-3"
+                className="flex flex-wrap items-center gap-3 border border-borde rounded-lg px-4 py-3"
               >
-                <div className="flex-1 text-sm">
-                  <div className="font-medium flex items-center gap-2">
+                <div className="flex-1 min-w-[12rem] text-sm">
+                  <div className="font-medium flex items-center gap-2 flex-wrap">
                     {m.full_name || 'Sin nombre'}
                     {m.is_owner && (
-                      <span className="text-[11px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold">
+                      <span className="text-[11px] px-1.5 py-0.5 rounded bg-azul/10 text-azul font-semibold">
                         Administra la cuenta
                       </span>
                     )}
                   </div>
-                  <div className="text-slate-500 text-xs">
+                  <div className="text-tinta-suave text-xs">
                     {m.email}
                     {m.job_title ? ` · ${m.job_title}` : ''}
                   </div>
                 </div>
                 {!m.is_owner && (
                   <form action={quitarMiembro.bind(null, m.id)}>
-                    <button className="text-xs text-red-600 hover:underline cursor-pointer">
+                    <Boton type="submit" variante="texto" className="text-xs text-alerta">
                       Quitar acceso
-                    </button>
+                    </Boton>
                   </form>
                 )}
               </div>
             ))}
           </div>
-        </section>
+        </Seccion>
 
-        <div className="text-xs text-slate-400 mt-8 bg-slate-50 rounded p-3">
+        <Aviso tipo="info">
           Para que alguien más de tu organización entre, dile que cree su cuenta en Jercol Hub y
-          elija <b>&ldquo;Unirme a una organización ya registrada&rdquo;</b> con el NIT
+          elija <b>&ldquo;Me uno a una ya registrada&rdquo;</b> con el NIT
           {cliente?.tax_id ? ` ${cliente.tax_id}` : ''}. Su solicitud te llegará aquí.
-        </div>
+        </Aviso>
       </div>
     </>
   );

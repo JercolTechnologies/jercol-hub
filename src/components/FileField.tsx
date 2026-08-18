@@ -26,7 +26,7 @@ export default function FileField({
 
   return (
     <div className="flex items-center gap-2">
-      <label className="text-sm px-3 py-1.5 rounded border border-slate-300 hover:bg-slate-50 cursor-pointer shrink-0">
+      <label className="text-sm px-3 py-1.5 rounded border border-borde hover:bg-lienzo cursor-pointer shrink-0">
         {label}
         <input
           type="file"
@@ -40,7 +40,7 @@ export default function FileField({
           }}
         />
       </label>
-      <span className={`text-xs truncate ${fileName ? 'text-slate-600' : 'text-slate-400'}`}>
+      <span className={`text-xs truncate ${fileName ? 'text-tinta' : 'text-tinta-suave/80'}`}>
         {fileName || 'Ningún archivo elegido'}
       </span>
     </div>

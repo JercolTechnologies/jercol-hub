@@ -117,8 +117,8 @@ export default async function AdminPage() {
 
     return (
       <div
-        className={`bg-white border rounded-lg p-4 ${
-          rechazado ? 'border-red-200' : 'border-slate-200'
+        className={`bg-tarjeta border rounded-lg p-4 ${
+          rechazado ? 'border-alerta/30' : 'border-borde'
         }`}
       >
         <div className="flex items-center justify-between gap-2 mb-3">
@@ -129,27 +129,27 @@ export default async function AdminPage() {
                   que uno verificado y eso llevaba a operar con él sin querer. */}
               <span
                 className={`text-[11px] px-1.5 py-0.5 rounded font-semibold ${
-                  rechazado ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'
+                  rechazado ? 'bg-alerta-fondo text-alerta' : 'bg-exito-fondo text-exito'
                 }`}
               >
                 {CLIENT_STATUS_LABEL[c.status]}
               </span>
             </h3>
-            {c.tax_id && <div className="text-xs text-slate-500">{c.tax_id}</div>}
+            {c.tax_id && <div className="text-xs text-tinta-suave">{c.tax_id}</div>}
           </div>
           <form action={setClientArchived.bind(null, c.id, !c.archived)}>
-            <button type="submit" className="text-xs text-slate-500 hover:underline cursor-pointer">
+            <button type="submit" className="text-xs text-tinta-suave hover:underline cursor-pointer">
               {c.archived ? 'Desarchivar' : 'Archivar'}
             </button>
           </form>
         </div>
 
         {rechazado && (
-          <div className="text-xs bg-red-50 text-red-700 rounded px-3 py-2 mb-3">
+          <div className="text-xs bg-alerta-fondo text-alerta rounded px-3 py-2 mb-3">
             <div className="font-medium mb-1">Motivo: {c.rejection_reason || 'sin motivo'}</div>
             El cliente puede corregir y reenviar. También puedes devolverlo tú a la cola.
             <form action={reabrirVerificacion.bind(null, c.id)} className="mt-2">
-              <button className="text-xs px-2.5 py-1 rounded bg-white border border-red-200 hover:bg-red-100 cursor-pointer">
+              <button className="text-xs px-2.5 py-1 rounded bg-tarjeta border border-alerta/30 hover:bg-alerta-fondo cursor-pointer">
                 Devolver a pendiente
               </button>
             </form>
@@ -158,11 +158,11 @@ export default async function AdminPage() {
         <ul className="space-y-1 mb-3">
           {(projectsByClient.get(c.id) || []).map((p) => (
             <li key={p.id} className="flex items-center gap-2">
-              <Link href={`/board/${p.id}`} className="text-sm text-blue-600 hover:underline">
+              <Link href={`/board/${p.id}`} className="text-sm text-azul hover:underline">
                 {p.name}
               </Link>
               {p.status === 'terminado' && (
-                <span className="text-[11px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">
+                <span className="text-[11px] px-1.5 py-0.5 rounded bg-lienzo text-tinta-suave">
                   Terminado
                 </span>
               )}
@@ -174,14 +174,14 @@ export default async function AdminPage() {
                 )}
                 className="ml-auto"
               >
-                <button type="submit" className="text-[11px] text-slate-400 hover:underline">
+                <button type="submit" className="text-[11px] text-tinta-suave/80 hover:underline">
                   {p.status === 'terminado' ? 'Reabrir' : 'Marcar terminado'}
                 </button>
               </form>
             </li>
           ))}
           {(projectsByClient.get(c.id) || []).length === 0 && (
-            <li className="text-sm text-slate-400">Sin proyectos todavía.</li>
+            <li className="text-sm text-tinta-suave/80">Sin proyectos todavía.</li>
           )}
         </ul>
         {/* Solo se crean proyectos para clientes verificados. La base de datos
@@ -194,22 +194,22 @@ export default async function AdminPage() {
               name="name"
               required
               placeholder="Nuevo proyecto"
-              className="flex-1 rounded border border-slate-300 px-3 py-1.5 text-sm"
+              className="flex-1 rounded border border-borde px-3 py-1.5 text-sm"
             />
             <button
               type="submit"
-              className="rounded bg-slate-100 text-slate-700 text-sm px-3 py-1.5 hover:bg-slate-200"
+              className="rounded bg-lienzo text-tinta text-sm px-3 py-1.5 hover:bg-lienzo"
             >
               + Proyecto
             </button>
           </form>
         )}
 
-        <details className="border-t border-slate-100 pt-3">
-          <summary className="text-xs font-semibold text-slate-500 cursor-pointer">
+        <details className="border-t border-borde pt-3">
+          <summary className="text-xs font-semibold text-tinta-suave cursor-pointer">
             Contactos ({(contactsByClient.get(c.id) || []).length})
             {!(contactsByClient.get(c.id) || []).some((ct) => ct.is_legal_rep) && (
-              <span className="ml-2 text-amber-600 font-normal">· falta el representante legal</span>
+              <span className="ml-2 text-aviso font-normal">· falta el representante legal</span>
             )}
           </summary>
 
@@ -219,17 +219,17 @@ export default async function AdminPage() {
                 <div className="flex items-center gap-2">
                   <span>{ct.full_name}</span>
                   {ct.is_legal_rep && (
-                    <span className="text-[11px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold">
+                    <span className="text-[11px] px-1.5 py-0.5 rounded bg-azul/10 text-azul font-semibold">
                       Rep. legal
                     </span>
                   )}
-                  {ct.role_label && <span className="text-xs text-slate-400">{ct.role_label}</span>}
+                  {ct.role_label && <span className="text-xs text-tinta-suave/80">{ct.role_label}</span>}
                   {ct.phone && (
                     <a
                       href={`https://wa.me/${ct.phone}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs text-emerald-600 hover:underline"
+                      className="text-xs text-exito hover:underline"
                     >
                       WhatsApp
                     </a>
@@ -237,7 +237,7 @@ export default async function AdminPage() {
                   <form action={deleteContact.bind(null, ct.id)} className="ml-auto">
                     <button
                       type="submit"
-                      className="text-[11px] text-red-500 hover:underline cursor-pointer"
+                      className="text-[11px] text-alerta hover:underline cursor-pointer"
                     >
                       eliminar
                     </button>
@@ -248,11 +248,11 @@ export default async function AdminPage() {
                   action={linkContactProfile.bind(null, ct.id)}
                   className="flex items-center gap-2 mt-1"
                 >
-                  <span className="text-[11px] text-slate-400">Cuenta:</span>
+                  <span className="text-[11px] text-tinta-suave/80">Cuenta:</span>
                   <select
                     name="profile_id"
                     defaultValue={ct.profile_id || ''}
-                    className="text-xs rounded border border-slate-300 px-1.5 py-1"
+                    className="text-xs rounded border border-borde px-1.5 py-1"
                   >
                     <option value="">Sin vincular</option>
                     {(usersByClient.get(c.id) || []).map((u) => (
@@ -263,12 +263,12 @@ export default async function AdminPage() {
                   </select>
                   <button
                     type="submit"
-                    className="text-[11px] text-blue-600 hover:underline cursor-pointer"
+                    className="text-[11px] text-azul hover:underline cursor-pointer"
                   >
                     vincular
                   </button>
                   {!ct.profile_id && ct.is_legal_rep && (
-                    <span className="text-[11px] text-amber-600">
+                    <span className="text-[11px] text-aviso">
                       sin cuenta vinculada no puede firmar
                     </span>
                   )}
@@ -276,25 +276,25 @@ export default async function AdminPage() {
               </li>
             ))}
             {(contactsByClient.get(c.id) || []).length === 0 && (
-              <li className="text-sm text-slate-400">Sin contactos todavía.</li>
+              <li className="text-sm text-tinta-suave/80">Sin contactos todavía.</li>
             )}
           </ul>
 
-          <form action={addContact.bind(null, c.id)} className="space-y-2 border-t border-slate-100 pt-3">
-            <div className="text-xs font-semibold text-slate-500">Agregar contacto nuevo</div>
+          <form action={addContact.bind(null, c.id)} className="space-y-2 border-t border-borde pt-3">
+            <div className="text-xs font-semibold text-tinta-suave">Agregar contacto nuevo</div>
             <div className="flex gap-2">
               <input
                 type="text"
                 name="full_name"
                 required
                 placeholder="Nombre completo"
-                className="flex-1 rounded border border-slate-300 px-2 py-1.5 text-sm"
+                className="flex-1 rounded border border-borde px-2 py-1.5 text-sm"
               />
               <input
                 type="text"
                 name="phone"
                 placeholder="Teléfono (con indicativo, ej. 57300...)"
-                className="flex-1 rounded border border-slate-300 px-2 py-1.5 text-sm"
+                className="flex-1 rounded border border-borde px-2 py-1.5 text-sm"
               />
             </div>
             <div className="flex gap-2 items-center">
@@ -302,23 +302,23 @@ export default async function AdminPage() {
                 type="email"
                 name="email"
                 placeholder="Correo (opcional)"
-                className="flex-1 rounded border border-slate-300 px-2 py-1.5 text-sm"
+                className="flex-1 rounded border border-borde px-2 py-1.5 text-sm"
               />
               <input
                 type="text"
                 name="role_label"
                 placeholder="Cargo (opcional)"
-                className="flex-1 rounded border border-slate-300 px-2 py-1.5 text-sm"
+                className="flex-1 rounded border border-borde px-2 py-1.5 text-sm"
               />
             </div>
             <div className="flex items-center gap-2">
-              <label className="flex items-center gap-1.5 text-xs text-slate-600">
+              <label className="flex items-center gap-1.5 text-xs text-tinta">
                 <input type="checkbox" name="is_legal_rep" />
                 Representante legal
               </label>
               <button
                 type="submit"
-                className="ml-auto rounded bg-slate-800 text-white text-sm px-3 py-1.5 hover:bg-slate-700 cursor-pointer"
+                className="ml-auto rounded bg-negro-suave text-white text-sm px-3 py-1.5 hover:bg-negro cursor-pointer"
               >
                 Guardar contacto
               </button>
@@ -337,64 +337,64 @@ export default async function AdminPage() {
 
         {porVerificar.length > 0 && (
           <section className="mb-10">
-            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">
+            <h2 className="text-sm font-semibold text-tinta-suave uppercase tracking-wide mb-3">
               Registros por verificar ({porVerificar.length})
             </h2>
-            <p className="text-sm text-slate-500 mb-3">
+            <p className="text-sm text-tinta-suave mb-3">
               Coteja el documento declarado contra el RUT y la cédula. Hasta que no verifiques,
               este cliente no puede firmar contratos.
             </p>
 
             <div className="space-y-4">
               {porVerificar.map((c) => (
-                <div key={c.id} className="bg-white border border-amber-200 rounded-lg p-4">
+                <div key={c.id} className="bg-tarjeta border border-aviso/30 rounded-lg p-4">
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <div>
                       <h3 className="font-medium">{c.name}</h3>
-                      <div className="text-xs text-slate-500">
+                      <div className="text-xs text-tinta-suave">
                         {c.kind === 'juridica' ? 'Empresa' : 'Persona natural'} · {c.tax_id}
                       </div>
                     </div>
-                    <span className="text-[11px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 font-semibold shrink-0">
+                    <span className="text-[11px] px-1.5 py-0.5 rounded bg-aviso-fondo text-aviso font-semibold shrink-0">
                       {CLIENT_STATUS_LABEL[c.status]}
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-600 mb-3">
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-tinta mb-3">
                     {c.city && (
                       <div>
-                        <span className="text-slate-400">Ciudad:</span> {c.city}
+                        <span className="text-tinta-suave/80">Ciudad:</span> {c.city}
                       </div>
                     )}
                     {c.phone && (
                       <div>
-                        <span className="text-slate-400">Teléfono:</span> {c.phone}
+                        <span className="text-tinta-suave/80">Teléfono:</span> {c.phone}
                       </div>
                     )}
                     {c.address && (
                       <div className="col-span-2">
-                        <span className="text-slate-400">Dirección:</span> {c.address}
+                        <span className="text-tinta-suave/80">Dirección:</span> {c.address}
                       </div>
                     )}
                     {(contactsByClient.get(c.id) || [])
                       .filter((ct) => ct.is_legal_rep)
                       .map((ct) => (
                         <div key={ct.id} className="col-span-2">
-                          <span className="text-slate-400">Representante legal:</span>{' '}
+                          <span className="text-tinta-suave/80">Representante legal:</span>{' '}
                           {ct.full_name} {ct.role_label ? `(${ct.role_label})` : ''}
                           {ct.profile_id ? ' · cuenta vinculada' : ' · sin cuenta vinculada'}
                         </div>
                       ))}
                     {c.data_consent_at && (
-                      <div className="col-span-2 text-slate-400">
+                      <div className="col-span-2 text-tinta-suave/80">
                         Autorizó el tratamiento de datos el{' '}
                         {new Date(c.data_consent_at).toLocaleDateString('es')}
                       </div>
                     )}
                   </div>
 
-                  <div className="border-t border-slate-100 pt-3 mb-3">
-                    <div className="text-xs font-semibold text-slate-500 mb-1">Documentos</div>
+                  <div className="border-t border-borde pt-3 mb-3">
+                    <div className="text-xs font-semibold text-tinta-suave mb-1">Documentos</div>
                     <ul className="space-y-1">
                       {(docsByClient.get(c.id) || []).map((d) => (
                         <li key={d.id}>
@@ -405,15 +405,15 @@ export default async function AdminPage() {
                         </li>
                       ))}
                       {(docsByClient.get(c.id) || []).length === 0 && (
-                        <li className="text-xs text-slate-400">Sin documentos adjuntos.</li>
+                        <li className="text-xs text-tinta-suave/80">Sin documentos adjuntos.</li>
                       )}
                     </ul>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+                  <div className="flex flex-wrap items-center gap-2 border-t border-borde pt-3">
                     <form action={verificarCliente.bind(null, c.id)}>
                       <input type="hidden" name="decision" value="aprobar" />
-                      <button className="text-sm px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer">
+                      <button className="text-sm px-3 py-1.5 rounded bg-verde-oscuro text-white hover:bg-exito cursor-pointer">
                         Verificar
                       </button>
                     </form>
@@ -427,9 +427,9 @@ export default async function AdminPage() {
                         type="text"
                         name="rejection_reason"
                         placeholder="Motivo del rechazo (se le muestra al cliente)"
-                        className="flex-1 rounded border border-slate-300 px-2 py-1.5 text-sm"
+                        className="flex-1 rounded border border-borde px-2 py-1.5 text-sm"
                       />
-                      <button className="text-sm px-3 py-1.5 rounded border border-slate-300 hover:bg-slate-50 cursor-pointer">
+                      <button className="text-sm px-3 py-1.5 rounded border border-borde hover:bg-lienzo cursor-pointer">
                         Rechazar
                       </button>
                     </form>
@@ -451,10 +451,10 @@ export default async function AdminPage() {
         */}
         {pending && pending.length > 0 && (
           <section className="mb-10">
-            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">
+            <h2 className="text-sm font-semibold text-tinta-suave uppercase tracking-wide mb-3">
               Cuentas sin organización ({pending.length})
             </h2>
-            <p className="text-sm text-slate-500 mb-3">
+            <p className="text-sm text-tinta-suave mb-3">
               Se registraron pero no completaron el alta. Normalmente se resuelve solo cuando
               entran; asígnalas a mano únicamente si quedaron atascadas.
             </p>
@@ -463,17 +463,17 @@ export default async function AdminPage() {
                 <form
                   key={p.id}
                   action={assignUser}
-                  className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-4 py-2"
+                  className="flex items-center gap-2 bg-tarjeta border border-borde rounded-lg px-4 py-2"
                 >
                   <input type="hidden" name="user_id" value={p.id} />
                   <div className="flex-1 text-sm">
                     <div className="font-medium">{p.full_name || 'Sin nombre'}</div>
-                    <div className="text-slate-500">{p.email}</div>
+                    <div className="text-tinta-suave">{p.email}</div>
                   </div>
                   <select
                     name="client_id"
                     required
-                    className="rounded border border-slate-300 text-sm px-2 py-1"
+                    className="rounded border border-borde text-sm px-2 py-1"
                   >
                     <option value="">Asignar a...</option>
                     {activeClients.map((c) => (
@@ -484,7 +484,7 @@ export default async function AdminPage() {
                   </select>
                   <button
                     type="submit"
-                    className="rounded bg-slate-800 text-white text-sm px-3 py-1 hover:bg-slate-700 cursor-pointer"
+                    className="rounded bg-negro-suave text-white text-sm px-3 py-1 hover:bg-negro cursor-pointer"
                   >
                     Asignar
                   </button>
@@ -495,11 +495,11 @@ export default async function AdminPage() {
         )}
 
       <section className="mb-10">
-        <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">
+        <h2 className="text-sm font-semibold text-tinta-suave uppercase tracking-wide mb-3">
           Clientes y proyectos
         </h2>
         {activeClients.length === 0 && (
-          <p className="text-sm text-slate-500">Crea tu primer cliente arriba.</p>
+          <p className="text-sm text-tinta-suave">Crea tu primer cliente arriba.</p>
         )}
         <div className="space-y-6">
           {activeClients.map((c) => (
@@ -510,7 +510,7 @@ export default async function AdminPage() {
 
         {rechazados.length > 0 && (
           <details className="mb-10">
-            <summary className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3 cursor-pointer">
+            <summary className="text-sm font-semibold text-tinta-suave uppercase tracking-wide mb-3 cursor-pointer">
               Rechazados ({rechazados.length})
             </summary>
             <div className="space-y-6 mt-3">
@@ -523,7 +523,7 @@ export default async function AdminPage() {
 
         {archivedClients.length > 0 && (
           <details className="mb-10">
-            <summary className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3 cursor-pointer">
+            <summary className="text-sm font-semibold text-tinta-suave uppercase tracking-wide mb-3 cursor-pointer">
               Archivados ({archivedClients.length})
             </summary>
             <div className="space-y-6 mt-3">

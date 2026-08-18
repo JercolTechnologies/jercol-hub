@@ -48,17 +48,17 @@ export default async function RegistroPage({
     <div className="flex flex-1 items-center justify-center px-4 py-10">
       <div className="w-full max-w-lg">
         <h1 className="text-xl font-semibold mb-2">Falta un paso</h1>
-        <p className="text-sm text-slate-500 mb-6">
+        <p className="text-sm text-tinta-suave mb-6">
           Para poder trabajar contigo necesitamos saber a nombre de quién va el proyecto.
         </p>
 
         <div className="space-y-3">
           <Link
             href="/registro/empresa"
-            className="block bg-white border border-slate-200 rounded-lg p-5 hover:border-blue-400"
+            className="block bg-tarjeta border border-borde rounded-lg p-5 hover:border-azul"
           >
             <div className="font-medium text-sm mb-1">Registrar mi organización</div>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-tinta-suave">
               Eres el primero de tu empresa (o trabajas como persona natural). Vas a necesitar el
               RUT y la cédula a la mano.
             </p>
@@ -66,10 +66,10 @@ export default async function RegistroPage({
 
           <Link
             href="/registro/unirme"
-            className="block bg-white border border-slate-200 rounded-lg p-5 hover:border-blue-400"
+            className="block bg-tarjeta border border-borde rounded-lg p-5 hover:border-azul"
           >
             <div className="font-medium text-sm mb-1">Unirme a una organización ya registrada</div>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-tinta-suave">
               Alguien de tu empresa ya la registró. Solo necesitas su NIT; quien la registró
               aprobará tu ingreso.
             </p>
@@ -77,7 +77,7 @@ export default async function RegistroPage({
         </div>
 
         <form action="/logout" method="post" className="mt-6 text-center">
-          <button className="text-sm text-slate-500 hover:underline cursor-pointer" type="submit">
+          <button className="text-sm text-tinta-suave hover:underline cursor-pointer" type="submit">
             Cerrar sesión
           </button>
         </form>

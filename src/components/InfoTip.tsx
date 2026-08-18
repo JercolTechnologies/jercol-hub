@@ -30,13 +30,13 @@ export default function InfoTip({ text }: { text: string }) {
           e.stopPropagation();
           setOpen((v) => !v);
         }}
-        className="w-4 h-4 rounded-full bg-slate-200 text-slate-600 text-[10px] font-bold leading-4 text-center hover:bg-slate-300"
+        className="w-4 h-4 rounded-full bg-lienzo text-tinta text-[10px] font-bold leading-4 text-center hover:bg-borde"
         aria-label="Ayuda"
       >
         i
       </button>
       {open && (
-        <div className="absolute z-50 top-5 left-0 w-56 bg-slate-800 text-white text-xs rounded-md px-3 py-2 shadow-lg">
+        <div className="absolute z-50 top-5 left-0 w-56 bg-negro-suave text-white text-xs rounded-md px-3 py-2 shadow-lg">
           {text}
         </div>
       )}

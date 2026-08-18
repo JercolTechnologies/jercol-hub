@@ -15,12 +15,12 @@ import { createContract } from './actions';
 export const dynamic = 'force-dynamic';
 
 const STATUS_COLOR: Record<ContractStatus, string> = {
-  borrador: 'bg-slate-100 text-slate-600',
-  en_revision: 'bg-amber-50 text-amber-700',
-  aprobado: 'bg-blue-50 text-blue-700',
+  borrador: 'bg-lienzo text-tinta',
+  en_revision: 'bg-aviso-fondo text-aviso',
+  aprobado: 'bg-azul/10 text-azul',
   firmado_jercol: 'bg-indigo-50 text-indigo-700',
-  vigente: 'bg-emerald-50 text-emerald-700',
-  anulado: 'bg-red-50 text-red-600',
+  vigente: 'bg-exito-fondo text-exito',
+  anulado: 'bg-alerta-fondo text-alerta',
 };
 
 export default async function ContractsPage() {
@@ -58,27 +58,27 @@ export default async function ContractsPage() {
         <h1 className="text-xl font-semibold mb-6">Contratos</h1>
 
       {isAdmin && (
-        <details className="bg-white border border-slate-200 rounded-lg p-4 mb-8">
-          <summary className="text-sm font-semibold text-slate-500 uppercase tracking-wide cursor-pointer">
+        <details className="bg-tarjeta border border-borde rounded-lg p-4 mb-8">
+          <summary className="text-sm font-semibold text-tinta-suave uppercase tracking-wide cursor-pointer">
             Nuevo contrato
           </summary>
           <form action={createContract} className="space-y-3 mt-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Título</label>
+              <label className="block text-xs font-semibold text-tinta-suave mb-1">Título</label>
               <input
                 type="text"
                 name="title"
                 required
                 placeholder="Ej: Contrato desarrollo plataforma ADI"
-                className="w-full rounded border border-slate-300 px-3 py-2 text-sm"
+                className="w-full rounded border border-borde px-3 py-2 text-sm"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Cliente</label>
+              <label className="block text-xs font-semibold text-tinta-suave mb-1">Cliente</label>
               <select
                 name="client_id"
                 required
-                className="w-full rounded border border-slate-300 px-2 py-2 text-sm"
+                className="w-full rounded border border-borde px-2 py-2 text-sm"
               >
                 <option value="">Selecciona...</option>
                 {clients.map((c) => (
@@ -89,30 +89,30 @@ export default async function ContractsPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">
+              <label className="block text-xs font-semibold text-tinta-suave mb-1">
                 Proyectos que cubre (puedes marcar varios)
               </label>
-              <div className="max-h-40 overflow-y-auto border border-slate-200 rounded p-2 space-y-1">
+              <div className="max-h-40 overflow-y-auto border border-borde rounded p-2 space-y-1">
                 {projects.map((p) => (
                   <label key={p.id} className="flex items-center gap-2 text-sm">
                     <input type="checkbox" name="project_ids" value={p.id} />
                     {p.name}
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs text-tinta-suave/80">
                       {clients.find((c) => c.id === p.client_id)?.name}
                     </span>
                   </label>
                 ))}
                 {projects.length === 0 && (
-                  <div className="text-sm text-slate-400">No hay proyectos todavía.</div>
+                  <div className="text-sm text-tinta-suave/80">No hay proyectos todavía.</div>
                 )}
               </div>
-              <div className="text-[11px] text-slate-400 mt-1">
+              <div className="text-[11px] text-tinta-suave/80 mt-1">
                 Puedes dejarlo vacío ahora y asociarlo después.
               </div>
             </div>
             <button
               type="submit"
-              className="rounded bg-blue-600 text-white text-sm font-medium px-4 py-2 hover:bg-blue-700 cursor-pointer"
+              className="rounded bg-azul text-white text-sm font-medium px-4 py-2 hover:bg-azul-oscuro cursor-pointer"
             >
               Crear contrato
             </button>
@@ -122,7 +122,7 @@ export default async function ContractsPage() {
 
       <div className="space-y-2">
         {(!contracts || contracts.length === 0) && (
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-tinta-suave">
             {isAdmin ? 'Todavía no has creado contratos.' : 'No hay contratos disponibles.'}
           </p>
         )}
@@ -130,7 +130,7 @@ export default async function ContractsPage() {
           <Link
             key={c.id}
             href={`/contratos/${c.id}`}
-            className="block bg-white border border-slate-200 rounded-lg px-4 py-3 hover:border-blue-400"
+            className="block bg-tarjeta border border-borde rounded-lg px-4 py-3 hover:border-azul"
           >
             <div className="flex items-center justify-between gap-2">
               <span className="font-medium text-sm">{c.title}</span>
@@ -141,7 +141,7 @@ export default async function ContractsPage() {
               </span>
             </div>
             {isAdmin && c.clients?.name && (
-              <div className="text-xs text-slate-500 mt-1">{c.clients.name}</div>
+              <div className="text-xs text-tinta-suave mt-1">{c.clients.name}</div>
             )}
           </Link>
         ))}

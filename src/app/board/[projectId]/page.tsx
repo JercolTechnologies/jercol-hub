@@ -48,10 +48,10 @@ export default async function BoardPage({
 
   return (
     <div className="flex flex-1 flex-col h-screen">
-      <header className="bg-white border-b border-slate-200 px-5 py-3 flex items-center gap-3">
+      <header className="bg-tarjeta border-b border-borde px-5 py-3 flex items-center gap-3">
         <Link
           href={isAdmin ? '/admin' : '/'}
-          className="text-sm text-slate-500 hover:text-slate-800 shrink-0"
+          className="text-sm text-tinta-suave hover:text-tinta shrink-0"
         >
           ← {isAdmin ? 'Panel' : 'Mis proyectos'}
         </Link>
@@ -59,30 +59,30 @@ export default async function BoardPage({
           <div className="font-semibold text-sm">
             {project.name}
             {project.status === 'terminado' && (
-              <span className="ml-2 text-[11px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-normal">
+              <span className="ml-2 text-[11px] px-1.5 py-0.5 rounded bg-lienzo text-tinta-suave font-normal">
                 Terminado
               </span>
             )}
           </div>
-          <div className="text-xs text-slate-500">{project.clients?.name}</div>
+          <div className="text-xs text-tinta-suave">{project.clients?.name}</div>
         </div>
         {linkedContract && (
           <Link
             href={`/contratos/${linkedContract.id}`}
-            className="text-sm text-slate-500 hover:text-slate-800"
+            className="text-sm text-tinta-suave hover:text-tinta"
             title={linkedContract.title}
           >
             📄 Contrato
           </Link>
         )}
-        <Link href="/contratos" className="text-sm text-slate-500 hover:text-slate-800">
+        <Link href="/contratos" className="text-sm text-tinta-suave hover:text-tinta">
           Contratos
         </Link>
-        <Link href="/ideas" className="text-sm text-slate-500 hover:text-slate-800">
+        <Link href="/ideas" className="text-sm text-tinta-suave hover:text-tinta">
           Ideas
         </Link>
         <form action="/logout" method="post">
-          <button className="text-sm text-slate-500 hover:underline" type="submit">
+          <button className="text-sm text-tinta-suave hover:underline" type="submit">
             Cerrar sesión
           </button>
         </form>

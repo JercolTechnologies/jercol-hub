@@ -55,11 +55,11 @@ export default function TelegramConnect({
           type="button"
           onClick={generar}
           disabled={pending}
-          className="text-sm px-3 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700 cursor-pointer disabled:bg-slate-200 disabled:text-slate-400"
+          className="text-sm px-3 py-1.5 rounded bg-azul text-white hover:bg-azul-oscuro cursor-pointer disabled:bg-lienzo disabled:text-tinta-suave/80"
         >
           {pending ? 'Generando…' : 'Conectar Telegram'}
         </button>
-        {error && <div className="text-xs text-red-600 mt-1">{error}</div>}
+        {error && <div className="text-xs text-alerta mt-1">{error}</div>}
       </div>
     );
   }
@@ -75,17 +75,17 @@ export default function TelegramConnect({
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-blue-600 hover:underline break-all"
+        className="text-azul hover:underline break-all"
       >
         {url}
       </a>
 
-      <details className="mt-4 bg-slate-50 border border-slate-200 rounded p-3">
-        <summary className="text-xs font-semibold text-slate-600 cursor-pointer">
+      <details className="mt-4 bg-lienzo border border-borde rounded p-3">
+        <summary className="text-xs font-semibold text-tinta cursor-pointer">
           ¿No se abrió Telegram o la página no carga?
         </summary>
 
-        <div className="mt-3 space-y-2 text-xs text-slate-600">
+        <div className="mt-3 space-y-2 text-xs text-tinta">
           <p>Puedes conectarte igual, a mano:</p>
           <ol className="list-decimal ml-4 space-y-1">
             <li>
@@ -95,13 +95,13 @@ export default function TelegramConnect({
           </ol>
 
           <div className="flex items-center gap-2 mt-1">
-            <code className="flex-1 bg-white border border-slate-300 rounded px-2 py-1.5 break-all font-mono text-[11px]">
+            <code className="flex-1 bg-tarjeta border border-borde rounded px-2 py-1.5 break-all font-mono text-[11px]">
               {comando}
             </code>
             <button
               type="button"
               onClick={copiar}
-              className="text-xs px-2.5 py-1.5 rounded bg-slate-800 text-white hover:bg-slate-700 cursor-pointer shrink-0"
+              className="text-xs px-2.5 py-1.5 rounded bg-negro-suave text-white hover:bg-negro cursor-pointer shrink-0"
             >
               {copiado ? '✓ Copiado' : 'Copiar'}
             </button>
@@ -109,11 +109,11 @@ export default function TelegramConnect({
         </div>
       </details>
 
-      <p className="text-xs text-slate-400 mt-3">
+      <p className="text-xs text-tinta-suave/80 mt-3">
         El código vence en 15 minutos. Si no alcanzas, genera otro.
       </p>
 
-      {error && <div className="text-xs text-red-600 mt-1">{error}</div>}
+      {error && <div className="text-xs text-alerta mt-1">{error}</div>}
     </div>
   );
 }

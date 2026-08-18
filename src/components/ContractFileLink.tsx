@@ -1,5 +1,6 @@
 'use client';
 
+import AvisoFlotante, { useMensaje } from '@/components/AvisoFlotante';
 import { createClient } from '@/lib/supabase/client';
 
 /**
@@ -9,28 +10,30 @@ import { createClient } from '@/lib/supabase/client';
 export default function ContractFileLink({
   path,
   label,
-  // Tailwind v4 pone cursor de flecha en los botones por defecto: si este
-  // botón se ve como enlace, hay que devolverle la manita explícitamente.
-  className = 'text-sm text-blue-600 hover:underline text-left cursor-pointer',
+  className = 'text-sm text-azul hover:underline text-left',
 }: {
   path: string;
   label: string;
   className?: string;
 }) {
   const supabase = createClient();
+  const { mensaje, mostrar, limpiar } = useMensaje();
 
   async function open() {
     const { data, error } = await supabase.storage.from('contracts').createSignedUrl(path, 120);
     if (error || !data) {
-      alert('No se pudo abrir el archivo: ' + (error?.message || ''));
+      mostrar('No se pudo abrir el archivo: ' + (error?.message || ''));
       return;
     }
     window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
   }
 
   return (
-    <button type="button" onClick={open} className={className}>
-      {label}
-    </button>
+    <>
+      <button type="button" onClick={open} className={className}>
+        {label}
+      </button>
+      <AvisoFlotante mensaje={mensaje} onCerrar={limpiar} />
+    </>
   );
 }

@@ -1,5 +1,9 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import Aviso from '@/components/Aviso';
+import Logo from '@/components/Logo';
+import Seccion from '@/components/Seccion';
+import { Boton, Campo, claseInput } from '@/components/Campo';
 import { createClient } from '@/lib/supabase/server';
 import type { Profile } from '@/lib/types';
 import { unirmeAEmpresa } from '../actions';
@@ -30,59 +34,53 @@ export default async function UnirmePage({
   return (
     <div className="flex flex-1 justify-center px-4 py-10">
       <div className="w-full max-w-md">
+        <div className="mb-6">
+          <Logo tamano="lg" />
+        </div>
+
         {/* Con ?elegir=1, porque /registro a secas vuelve a enrutar aquí según
             el camino elegido al crear la cuenta, y sería un bucle. */}
-        <Link href="/registro?elegir=1" className="text-sm text-slate-500 hover:underline">
+        <Link href="/registro?elegir=1" className="text-sm text-tinta-suave hover:text-tinta">
           ← Esto no es lo que buscaba
         </Link>
 
         <h1 className="text-xl font-semibold mt-4 mb-1">Unirme a una organización</h1>
-        <p className="text-sm text-slate-500 mb-6">
+        <p className="text-sm text-tinta-suave mb-5">
           Quien registró la organización recibirá tu solicitud y la aprobará.
         </p>
 
-        {error && (
-          <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded px-3 py-2">
-            {error}
-          </div>
-        )}
+        {error && <Aviso className="mb-4">{error}</Aviso>}
 
-        <form action={unirmeAEmpresa} className="bg-white border border-slate-200 rounded-lg p-5 space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">
-              NIT de la organización
-            </label>
-            <input
-              type="text"
-              name="tax_id"
-              required
-              className="w-full rounded border border-slate-300 px-3 py-2 text-sm"
-              placeholder="900123456-7"
-            />
-            <p className="text-[11px] text-slate-400 mt-1">
-              Pídeselo a quien registró la cuenta de tu organización. Puedes escribirlo con
-              puntos y guion o sin ellos.
-            </p>
-          </div>
+        <Seccion>
+          <form action={unirmeAEmpresa} className="space-y-4">
+            <Campo
+              etiqueta="NIT de la organización"
+              ayuda="Pídeselo a quien registró la cuenta de tu organización. Puedes escribirlo con puntos y guion o sin ellos."
+            >
+              <input
+                type="text"
+                name="tax_id"
+                required
+                className={claseInput}
+                placeholder="900123456-7"
+              />
+            </Campo>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">Tu cargo</label>
-            <input
-              type="text"
-              name="job_title"
-              required
-              className="w-full rounded border border-slate-300 px-3 py-2 text-sm"
-              placeholder="CTO, asistente, coordinadora…"
-            />
-          </div>
+            <Campo etiqueta="Tu cargo">
+              <input
+                type="text"
+                name="job_title"
+                required
+                className={claseInput}
+                placeholder="CTO, asistente, coordinadora…"
+              />
+            </Campo>
 
-          <button
-            type="submit"
-            className="w-full rounded bg-blue-600 text-white text-sm font-medium py-2 hover:bg-blue-700 cursor-pointer"
-          >
-            Enviar solicitud
-          </button>
-        </form>
+            <Boton type="submit" ancho>
+              Enviar solicitud
+            </Boton>
+          </form>
+        </Seccion>
       </div>
     </div>
   );
