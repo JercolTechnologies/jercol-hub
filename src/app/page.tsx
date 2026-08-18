@@ -1,21 +1,42 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import AppHeader from '@/components/AppHeader';
+import Aviso from '@/components/Aviso';
+import Logo from '@/components/Logo';
 import { createClient } from '@/lib/supabase/server';
 import type { Profile, Project } from '@/lib/types';
 
-/** Pantalla de una sola frase, para los estados en los que no hay nada que hacer. */
-function Aviso({ titulo, texto }: { titulo: string; texto: string }) {
+/**
+ * Pantalla de una sola frase, para los estados en los que no hay nada que
+ * hacer más que esperar. Lleva la marca porque en varios de esos estados es
+ * lo único que la persona ve de Jercol Hub durante días.
+ */
+function PantallaEstado({
+  titulo,
+  texto,
+  tono = 'info',
+}: {
+  titulo: string;
+  texto: string;
+  tono?: 'info' | 'aviso' | 'error';
+}) {
   return (
-    <div className="flex flex-1 items-center justify-center px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-lg font-semibold mb-2">{titulo}</h1>
-        <p className="text-sm text-slate-500 mb-4">{texto}</p>
-        <form action="/logout" method="post">
-          <button className="text-sm text-blue-600 hover:underline cursor-pointer" type="submit">
-            Cerrar sesión
-          </button>
-        </form>
+    <div className="flex flex-1 items-center justify-center px-4 py-10">
+      <div className="w-full max-w-md">
+        <div className="bg-tarjeta border border-borde rounded-xl shadow-sm p-8 text-center">
+          <div className="flex justify-center mb-5">
+            <Logo tamano="lg" />
+          </div>
+          <h1 className="text-lg font-semibold mb-2">{titulo}</h1>
+          <Aviso tipo={tono} className="text-left">
+            {texto}
+          </Aviso>
+          <form action="/logout" method="post" className="mt-5">
+            <button className="text-sm text-tinta-suave hover:text-tinta" type="submit">
+              Cerrar sesión
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );
@@ -58,17 +79,23 @@ export default async function Home() {
   if (profileError) {
     console.error('Home: no se pudo leer el perfil:', profileError);
     return (
-      <div className="flex flex-1 items-center justify-center px-4">
-        <div className="max-w-sm text-center">
+      <div className="flex flex-1 items-center justify-center px-4 py-10">
+        <div className="w-full max-w-md bg-tarjeta border border-borde rounded-xl shadow-sm p-8 text-center">
+          <div className="flex justify-center mb-5">
+            <Logo tamano="lg" />
+          </div>
           <h1 className="text-lg font-semibold mb-2">No pudimos cargar tu cuenta</h1>
-          <p className="text-sm text-slate-500 mb-4">
-            Hubo un problema al leer tus datos. Vuelve a intentarlo en un momento; si
-            sigue pasando, avísanos con este detalle:
-          </p>
-          <p className="text-xs text-slate-400 font-mono mb-4 break-words">
-            {profileError.message}
-          </p>
-          <Link href="/" className="text-sm text-blue-600 hover:underline">
+          <Aviso className="text-left">
+            Hubo un problema al leer tus datos. Vuelve a intentarlo en un momento; si sigue
+            pasando, avísanos con este detalle:
+            <span className="block font-mono text-xs mt-2 break-words opacity-80">
+              {profileError.message}
+            </span>
+          </Aviso>
+          <Link
+            href="/"
+            className="inline-block mt-5 text-sm text-azul hover:underline underline-offset-2"
+          >
             Reintentar
           </Link>
         </div>
@@ -80,20 +107,11 @@ export default async function Home() {
   // que lo crea no corrió para esta cuenta.
   if (!profile) {
     return (
-      <div className="flex flex-1 items-center justify-center px-4">
-        <div className="max-w-sm text-center">
-          <h1 className="text-lg font-semibold mb-2">No se encontró tu perfil</h1>
-          <p className="text-sm text-slate-500 mb-4">
-            Tu cuenta existe pero no tiene un perfil asociado en la base de datos.
-            Contacta al administrador para que lo revise.
-          </p>
-          <form action="/logout" method="post">
-            <button className="text-sm text-blue-600 hover:underline cursor-pointer" type="submit">
-              Cerrar sesión
-            </button>
-          </form>
-        </div>
-      </div>
+      <PantallaEstado
+        titulo="No se encontró tu perfil"
+        texto="Tu cuenta existe pero no tiene un perfil asociado en la base de datos. Contacta al administrador para que lo revise."
+        tono="error"
+      />
     );
   }
 
@@ -109,7 +127,7 @@ export default async function Home() {
   // Pidió unirse a una organización y su responsable aún no lo aprueba.
   if (profile.member_status === 'pendiente') {
     return (
-      <Aviso
+      <PantallaEstado
         titulo="Solicitud enviada"
         texto="Le pedimos a quien administra la cuenta de tu organización que apruebe tu ingreso. Te avisamos apenas lo haga."
       />
@@ -118,9 +136,10 @@ export default async function Home() {
 
   if (profile.member_status === 'rechazado') {
     return (
-      <Aviso
+      <PantallaEstado
         titulo="Solicitud no aprobada"
         texto="Quien administra la cuenta de tu organización no aprobó tu ingreso. Si crees que es un error, háblalo directamente con esa persona."
+        tono="aviso"
       />
     );
   }
@@ -133,7 +152,7 @@ export default async function Home() {
 
   if (cliente?.status === 'pendiente') {
     return (
-      <Aviso
+      <PantallaEstado
         titulo="Registro en revisión"
         texto={`Estamos verificando los documentos de ${cliente.name}. Es un paso rápido: apenas quede listo te habilitamos y podrás empezar.`}
       />
@@ -146,11 +165,12 @@ export default async function Home() {
     if (profile.is_owner) redirect('/registro/corregir');
 
     return (
-      <Aviso
+      <PantallaEstado
         titulo="No pudimos verificar el registro"
         texto={`${
           cliente.rejection_reason || 'Hubo un problema con los documentos aportados.'
         } Habla con quien registró la cuenta de tu organización para que lo corrija.`}
+        tono="aviso"
       />
     );
   }
@@ -162,19 +182,29 @@ export default async function Home() {
   return (
     <>
       <AppHeader isAdmin={false} isOwner={profile.is_owner} />
-      <div className="flex-1 max-w-3xl mx-auto w-full px-4 py-8">
-        <h1 className="text-lg font-semibold mb-4">Tus proyectos</h1>
+      <div className="flex-1 max-w-5xl mx-auto w-full px-4 py-8">
+        <h1 className="text-xl font-semibold mb-1">Tus proyectos</h1>
+        <p className="text-sm text-tinta-suave mb-6">{cliente?.name}</p>
+
         {(!projects || projects.length === 0) && (
-          <p className="text-sm text-slate-500">Todavía no tienes proyectos asignados.</p>
+          <Aviso tipo="info">
+            Todavía no tienes proyectos asignados. Cuando arranque el primero lo verás aquí.
+          </Aviso>
         )}
-        <ul className="space-y-2">
+
+        <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {projects?.map((p) => (
             <li key={p.id}>
               <Link
                 href={`/board/${p.id}`}
-                className="block bg-white border border-slate-200 rounded-lg px-4 py-3 hover:border-blue-400"
+                className="group block h-full bg-tarjeta border border-borde rounded-xl p-5 shadow-sm hover:border-azul hover:shadow transition-all"
               >
-                {p.name}
+                <span className="block font-medium group-hover:text-azul transition-colors">
+                  {p.name}
+                </span>
+                <span className="block text-xs text-tinta-suave mt-1">
+                  {p.status === 'terminado' ? 'Terminado' : 'En curso'}
+                </span>
               </Link>
             </li>
           ))}

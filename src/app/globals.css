@@ -1,12 +1,80 @@
 @import "tailwindcss";
 
-:root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+/* ======================================================================
+   Paleta de Jercol Hub
+   ======================================================================
+   Declarada con @theme para que Tailwind genere las utilidades (bg-negro,
+   text-verde, border-borde...) en vez de repetir hexadecimales sueltos por
+   toda la aplicación.
+
+   Dos decisiones que conviene no deshacer sin pensarlo:
+
+   1. El lienzo es gris claro, no blanco puro. Una superficie blanca a
+      pantalla completa cansa la vista en sesiones largas, y además deja sin
+      contraste a las tarjetas, que también son blancas. El gris hace que las
+      tarjetas se lean como objetos sobre una mesa.
+
+   2. Hay dos verdes. El de marca (#22D89C) es menta y brilla sobre negro,
+      pero sobre blanco da un contraste de ~1.9:1, ilegible. Para texto sobre
+      fondo claro va --color-verde-oscuro. Mismo tono, distinta luminosidad.
+   ====================================================================== */
+
+@theme {
+  /* Superficies */
+  --color-negro: #101010;
+  --color-negro-suave: #1c1d1f;
+  /* Muestreado del fondo de la animación de marca. Se usa solo en el panel
+     que la contiene, para que el vídeo no se recorte contra un negro
+     distinto y se le note el rectángulo. */
+  --color-negro-video: #161c1e;
+  --color-lienzo: #f2f4f6;
+  --color-tarjeta: #ffffff;
+  --color-borde: #e3e6ea;
+
+  /* Marca */
+  --color-azul: #1668e3;
+  --color-azul-oscuro: #1257c0;
+  --color-verde: #22d89c;
+  --color-verde-oscuro: #0d9b6c;
+
+  /* Texto */
+  --color-tinta: #101418;
+  --color-tinta-suave: #667180;
+
+  /* Tipografía del sistema: Segoe UI en Windows, SF en Mac, Roboto en
+     Android. Ninguna descarga y ningún salto de fuente al cargar. */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, sans-serif;
+
+  /* Estados */
+  --color-alerta: #b91c1c;
+  --color-alerta-fondo: #fef2f2;
+  --color-exito: #047857;
+  --color-exito-fondo: #ecfdf5;
+  --color-aviso: #b45309;
+  --color-aviso-fondo: #fffbeb;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--color-lienzo);
+  color: var(--color-tinta);
+}
+
+/* Los botones nativos traen cursor: default. En una aplicación donde todo lo
+   pulsable es un botón, eso hace que nada parezca pulsable. */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
+
+/* Quien haya pedido menos movimiento en su sistema no debería recibir la
+   animación de entrada ni ninguna otra. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
