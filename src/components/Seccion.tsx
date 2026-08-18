@@ -23,7 +23,9 @@ export default function Seccion({
   children: React.ReactNode;
 }) {
   return (
-    <section className={`bg-tarjeta border border-borde rounded-xl p-5 sm:p-6 ${className}`}>
+    <section
+      className={`bg-tarjeta border border-borde rounded-xl shadow-sm p-5 sm:p-6 ${className}`}
+    >
       {titulo && (
         <div className="flex items-start gap-3 mb-4">
           <div className="flex-1 min-w-0">

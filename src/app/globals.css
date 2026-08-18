@@ -27,9 +27,13 @@
      que la contiene, para que el vídeo no se recorte contra un negro
      distinto y se le note el rectángulo. */
   --color-negro-video: #161c1e;
-  --color-lienzo: #f2f4f6;
+  /* El lienzo tiene que distinguirse de la tarjeta a simple vista. Un gris
+     demasiado suave (#f2f4f6) es indistinguible del blanco y deja las
+     tarjetas flotando sin contraste; demasiado oscuro se ve sucio. Este es el
+     punto donde se nota el escalón sin ensuciar. */
+  --color-lienzo: #e8ecf0;
   --color-tarjeta: #ffffff;
-  --color-borde: #e3e6ea;
+  --color-borde: #dde2e8;
 
   /* Marca */
   --color-azul: #1668e3;
