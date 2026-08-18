@@ -24,7 +24,7 @@ export default function Seccion({
 }) {
   return (
     <section
-      className={`bg-tarjeta border border-borde rounded-xl shadow-sm p-5 sm:p-6 ${className}`}
+      className={`bg-tarjeta border border-borde rounded-xl p-5 sm:p-6 ${className}`}
     >
       {titulo && (
         <div className="flex items-start gap-3 mb-4">

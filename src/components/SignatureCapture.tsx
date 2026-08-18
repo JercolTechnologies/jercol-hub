@@ -155,7 +155,7 @@ export default function SignatureCapture({
             className={`text-xs px-2.5 py-1 rounded cursor-pointer ${
               mode === t.key
                 ? 'bg-negro-suave text-white'
-                : 'bg-lienzo text-tinta hover:bg-lienzo'
+                : 'bg-elevado border border-borde text-tinta hover:bg-tarjeta'
             }`}
           >
             {t.label}
@@ -173,7 +173,7 @@ export default function SignatureCapture({
             onPointerMove={moveDraw}
             onPointerUp={endDraw}
             onPointerLeave={endDraw}
-            className="w-full border border-borde rounded bg-tarjeta touch-none cursor-crosshair"
+            className="w-full border border-borde rounded bg-campo touch-none cursor-crosshair"
           />
           <button
             type="button"
@@ -187,7 +187,7 @@ export default function SignatureCapture({
 
       {mode === 'subir' && (
         <div>
-          <label className="text-sm px-3 py-1.5 rounded border border-borde hover:bg-lienzo cursor-pointer inline-block">
+          <label className="text-sm px-3 py-1.5 rounded border border-borde hover:bg-tarjeta cursor-pointer inline-block">
             Elegir imagen de firma
             <input
               type="file"
@@ -201,7 +201,7 @@ export default function SignatureCapture({
             <img
               src={dataUrl}
               alt="Firma"
-              className="mt-2 max-h-24 border border-borde rounded bg-tarjeta"
+              className="mt-2 max-h-24 border border-borde rounded bg-campo"
             />
           )}
         </div>
@@ -214,14 +214,14 @@ export default function SignatureCapture({
             value={typed}
             onChange={(e) => renderTyped(e.target.value)}
             placeholder="Escribe tu nombre completo"
-            className="w-full rounded border border-borde px-3 py-2 text-sm"
+            className="w-full rounded-lg border border-borde bg-campo px-3 py-2 text-sm"
           />
           {dataUrl && (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={dataUrl}
               alt="Firma generada"
-              className="mt-2 max-h-24 border border-borde rounded bg-tarjeta"
+              className="mt-2 max-h-24 border border-borde rounded bg-campo"
             />
           )}
         </div>

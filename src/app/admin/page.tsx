@@ -135,7 +135,7 @@ export default async function AdminPage() {
                 {CLIENT_STATUS_LABEL[c.status]}
               </span>
             </h3>
-            {c.tax_id && <div className="text-xs text-tinta-suave">{c.tax_id}</div>}
+            {c.tax_id && <div className="text-xs text-tinta-suave font-mono tracking-tight">{c.tax_id}</div>}
           </div>
           <form action={setClientArchived.bind(null, c.id, !c.archived)}>
             <button type="submit" className="text-xs text-tinta-suave hover:underline cursor-pointer">
@@ -198,7 +198,7 @@ export default async function AdminPage() {
             />
             <button
               type="submit"
-              className="rounded bg-lienzo text-tinta text-sm px-3 py-1.5 hover:bg-lienzo"
+              className="rounded-lg bg-elevado border border-borde text-tinta text-sm px-3 py-1.5 hover:bg-tarjeta"
             >
               + Proyecto
             </button>
@@ -352,7 +352,7 @@ export default async function AdminPage() {
                     <div>
                       <h3 className="font-medium">{c.name}</h3>
                       <div className="text-xs text-tinta-suave">
-                        {c.kind === 'juridica' ? 'Empresa' : 'Persona natural'} · {c.tax_id}
+                        {c.kind === 'juridica' ? 'Empresa' : 'Persona natural'} · <span className="font-mono tracking-tight">{c.tax_id}</span>
                       </div>
                     </div>
                     <span className="text-[11px] px-1.5 py-0.5 rounded bg-aviso-fondo text-aviso font-semibold shrink-0">
@@ -463,7 +463,7 @@ export default async function AdminPage() {
                 <form
                   key={p.id}
                   action={assignUser}
-                  className="flex items-center gap-2 bg-tarjeta border border-borde rounded-lg px-4 py-2"
+                  className="flex items-center gap-2 bg-elevado border border-borde rounded-lg px-4 py-2"
                 >
                   <input type="hidden" name="user_id" value={p.id} />
                   <div className="flex-1 text-sm">

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import Logo from '@/components/Logo';
 import { createClient } from '@/lib/supabase/server';
 import type { Profile } from '@/lib/types';
 
@@ -47,6 +48,10 @@ export default async function RegistroPage({
   return (
     <div className="flex flex-1 items-center justify-center px-4 py-10">
       <div className="w-full max-w-lg">
+        <div className="mb-6">
+          <Logo tamano="lg" />
+        </div>
+
         <h1 className="text-xl font-semibold mb-2">Falta un paso</h1>
         <p className="text-sm text-tinta-suave mb-6">
           Para poder trabajar contigo necesitamos saber a nombre de quién va el proyecto.
@@ -55,7 +60,7 @@ export default async function RegistroPage({
         <div className="space-y-3">
           <Link
             href="/registro/empresa"
-            className="block bg-tarjeta border border-borde rounded-lg p-5 hover:border-azul"
+            className="block bg-tarjeta border border-borde rounded-xl p-5 hover:border-azul"
           >
             <div className="font-medium text-sm mb-1">Registrar mi organización</div>
             <p className="text-sm text-tinta-suave">
@@ -66,7 +71,7 @@ export default async function RegistroPage({
 
           <Link
             href="/registro/unirme"
-            className="block bg-tarjeta border border-borde rounded-lg p-5 hover:border-azul"
+            className="block bg-tarjeta border border-borde rounded-xl p-5 hover:border-azul"
           >
             <div className="font-medium text-sm mb-1">Unirme a una organización ya registrada</div>
             <p className="text-sm text-tinta-suave">

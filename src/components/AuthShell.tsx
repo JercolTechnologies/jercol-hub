@@ -57,13 +57,16 @@ export default function AuthShell({
   );
 
   return (
-    <div className="flex-1 flex items-center justify-center px-4 py-8">
+    // La puerta: fondo oscuro con la retícula de Jercol Technologies y la
+    // tarjeta flotando encima. Es la zona donde se pasan segundos, no horas,
+    // así que aquí sí manda la impresión sobre la lectura sostenida.
+    <div className="reticula flex-1 flex items-center justify-center px-4 py-10">
       <div
         className={`w-full ${
           conIntro ? 'max-w-2xl' : ancho === 'lg' ? 'max-w-lg' : 'max-w-sm'
         }`}
       >
-        <div className="bg-tarjeta border border-borde rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-elevado border border-white/10 rounded-xl overflow-hidden shadow-2xl shadow-black/40">
           {conIntro && banda}
 
           <div className="p-6 sm:p-8">
@@ -81,11 +84,9 @@ export default function AuthShell({
           </div>
         </div>
 
-        {conIntro && (
-          <p className="mt-4 text-center text-xs text-tinta-suave">
-            Proyectos · Tareas · Contratos · Firmas
-          </p>
-        )}
+        <p className="mt-5 text-center text-[11px] font-mono tracking-wide text-verde/70">
+          Proyectos · Tareas · Contratos · Firmas
+        </p>
       </div>
     </div>
   );

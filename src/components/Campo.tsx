@@ -4,10 +4,18 @@
  * radio de una esquina obligaba a buscar y reemplazar por todo el proyecto.
  */
 
+/**
+ * El campo va en blanco puro aunque su contenedor sea gris: que la zona
+ * donde se escribe sea más clara que lo que la rodea es una señal, no
+ * decoración. Es el único sitio de la aplicación donde se usa blanco.
+ */
 export const claseInput =
-  'w-full rounded-lg border border-borde bg-tarjeta px-3 py-2 text-sm ' +
+  'w-full rounded-lg border border-borde bg-campo px-3 py-2 text-sm ' +
   'placeholder:text-tinta-suave/60 ' +
   'focus:outline-none focus:border-azul focus:ring-2 focus:ring-azul/15 transition-colors';
+
+/** Para NIT, fechas, identificadores y huellas de firma. */
+export const claseDato = 'font-mono text-[0.8125rem] tracking-tight';
 
 export function Campo({
   etiqueta,
@@ -47,7 +55,7 @@ export function Boton({
 
   const variantes = {
     principal: 'bg-azul text-white hover:bg-azul-oscuro px-4 py-2',
-    secundario: 'border border-borde bg-tarjeta text-tinta hover:bg-lienzo px-4 py-2',
+    secundario: 'border border-borde bg-elevado text-tinta hover:bg-tarjeta px-4 py-2',
     peligro: 'border border-alerta/30 text-alerta hover:bg-alerta-fondo px-4 py-2',
     texto: 'text-azul hover:underline underline-offset-2 px-0 py-0',
   }[variante];

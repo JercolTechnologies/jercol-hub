@@ -47,7 +47,7 @@ const STATUS_COLOR: Record<ContractStatus, string> = {
   borrador: 'bg-lienzo text-tinta',
   en_revision: 'bg-aviso-fondo text-aviso',
   aprobado: 'bg-azul/10 text-azul',
-  firmado_jercol: 'bg-indigo-50 text-indigo-700',
+  firmado_jercol: 'bg-verde/12 text-verde-oscuro',
   vigente: 'bg-exito-fondo text-exito',
   anulado: 'bg-alerta-fondo text-alerta',
 };
@@ -189,7 +189,7 @@ export default async function ContractDetailPage({
         ]}
       />
 
-      <div className="bg-tarjeta border border-borde rounded-lg p-5 mt-4">
+      <div className="bg-tarjeta border border-borde rounded-xl p-5 mt-4">
         <div className="flex items-start justify-between gap-2 mb-1">
           <h1 className="text-lg font-semibold">{contract.title}</h1>
           <span
@@ -250,7 +250,7 @@ export default async function ContractDetailPage({
               </div>
               <button
                 type="submit"
-                className="text-sm px-3 py-1.5 rounded bg-lienzo hover:bg-lienzo cursor-pointer"
+                className="text-sm px-3 py-1.5 rounded bg-elevado border border-borde hover:bg-tarjeta cursor-pointer"
               >
                 Guardar proyectos
               </button>
@@ -281,7 +281,7 @@ export default async function ContractDetailPage({
               </select>
               <button
                 type="submit"
-                className="text-sm px-3 py-1.5 rounded bg-lienzo hover:bg-lienzo cursor-pointer"
+                className="text-sm px-3 py-1.5 rounded bg-elevado border border-borde hover:bg-tarjeta cursor-pointer"
               >
                 Guardar
               </button>
@@ -396,8 +396,8 @@ export default async function ContractDetailPage({
                       {s.full_name}
                     </div>
                     <div className="text-[11px] text-tinta-suave/80">
-                      Doc. {s.document_id} · {fmtDate(s.signed_at)}
-                      {s.ip ? ` · IP ${s.ip}` : ''}
+                      Doc. <span className="font-mono tracking-tight">{s.document_id}</span> · <span className="font-mono tracking-tight">{fmtDate(s.signed_at)}</span>
+                      {s.ip ? <> · IP <span className="font-mono tracking-tight">{s.ip}</span></> : null}
                     </div>
                   </li>
                 ))}

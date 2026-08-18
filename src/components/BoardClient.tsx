@@ -466,7 +466,7 @@ export default function BoardClient({
       <div className="px-5 py-2 text-xs text-tinta-suave flex items-center gap-2">
         <span
           className={`inline-block w-2 h-2 rounded-full ${
-            live === 'on' ? 'bg-verde-oscuro' : live === 'off' ? 'bg-alerta-fondo0' : 'bg-borde'
+            live === 'on' ? 'bg-verde-oscuro' : live === 'off' ? 'bg-alerta' : 'bg-borde'
           }`}
         />
         {live === 'on' ? 'Conectado · en vivo' : live === 'off' ? 'Sin conexión en vivo' : 'Conectando…'}
@@ -478,7 +478,14 @@ export default function BoardClient({
           const colTickets = tickets.filter((t) => t.status === col.key);
           const canCreateHere = isAdmin || col.key === 'solicitudes';
           return (
-            <div key={col.key} className="bg-lienzo rounded-lg min-w-[270px] max-w-[270px] flex flex-col">
+            // Tres superficies: el fondo del tablero es el lienzo, la columna
+            // sube un nivel y la tarjeta otro. Antes columna y fondo eran el
+            // mismo gris y las tarjetas blancas, así que no se distinguía
+            // dónde acababa una columna.
+            <div
+              key={col.key}
+              className="bg-tarjeta border border-borde-suave rounded-lg min-w-[270px] max-w-[270px] flex flex-col"
+            >
               <div className="px-3 pt-3 pb-1 text-sm font-semibold text-tinta-suave flex items-center gap-1.5 justify-between">
                 <span className="flex items-center gap-1.5">
                   {col.label}
@@ -508,10 +515,10 @@ export default function BoardClient({
                       if (isAdmin) dragTicketId.current = t.id;
                     }}
                     onClick={() => openDetail(t)}
-                    className="bg-tarjeta rounded-md px-2.5 py-2 mb-2 shadow-sm cursor-pointer text-sm hover:bg-lienzo relative"
+                    className="bg-elevado border border-borde-suave rounded-md px-2.5 py-2 mb-2 text-sm hover:border-azul/60 transition-colors relative"
                   >
                     {isUnread(t) && (
-                      <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-alerta-fondo0" />
+                      <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-alerta" />
                     )}
                     <div className="mb-1.5 leading-snug">{t.title}</div>
                     <div className="flex gap-1.5 flex-wrap items-center">
@@ -528,7 +535,7 @@ export default function BoardClient({
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
                           title="Abrir preview"
-                          className="text-[11px] px-1.5 py-0.5 rounded bg-lienzo text-tinta hover:bg-lienzo"
+                          className="text-[11px] px-1.5 py-0.5 rounded bg-elevado border border-borde text-tinta hover:bg-tarjeta"
                         >
                           🔗 Preview
                         </a>
@@ -540,7 +547,7 @@ export default function BoardClient({
               {canCreateHere && (
                 <div className="px-2 pb-2.5">
                   <button
-                    className="w-full text-left text-sm text-tinta-suave hover:bg-lienzo hover:text-tinta rounded px-1 py-1.5"
+                    className="w-full text-left text-sm text-tinta-suave hover:bg-elevado hover:text-tinta rounded px-1 py-1.5"
                     onClick={() => setNewTicketStatus(col.key)}
                   >
                     + Nueva tarjeta
@@ -553,8 +560,8 @@ export default function BoardClient({
       </div>
 
       {newTicketStatus && (
-        <div className="fixed inset-0 bg-negro/50 flex items-center justify-center p-5 z-50">
-          <div className="bg-tarjeta rounded-lg max-w-md w-full p-5 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-negro/60 backdrop-blur-[2px] flex items-center justify-center p-5 z-50">
+          <div className="bg-elevado border border-borde rounded-xl max-w-md w-full p-5 max-h-[90vh] overflow-y-auto shadow-2xl shadow-black/20">
             <h2 className="font-semibold mb-3">Nueva tarjeta</h2>
             {newTicketStatus === 'solicitudes' && (
               <div className="mb-3 text-xs bg-aviso-fondo text-aviso rounded px-3 py-2">{TIP_SOLICITUD}</div>
@@ -652,8 +659,8 @@ export default function BoardClient({
       )}
 
       {openTicket && (
-        <div className="fixed inset-0 bg-negro/50 flex items-center justify-center p-5 z-50">
-          <div className="bg-tarjeta rounded-lg max-w-lg w-full p-5 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-negro/60 backdrop-blur-[2px] flex items-center justify-center p-5 z-50">
+          <div className="bg-elevado border border-borde rounded-xl max-w-lg w-full p-5 max-h-[90vh] overflow-y-auto shadow-2xl shadow-black/20">
             {!editing ? (
               <>
                 <div className="flex items-start justify-between gap-2 mb-2">

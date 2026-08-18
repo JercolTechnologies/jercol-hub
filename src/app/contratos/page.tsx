@@ -18,7 +18,7 @@ const STATUS_COLOR: Record<ContractStatus, string> = {
   borrador: 'bg-lienzo text-tinta',
   en_revision: 'bg-aviso-fondo text-aviso',
   aprobado: 'bg-azul/10 text-azul',
-  firmado_jercol: 'bg-indigo-50 text-indigo-700',
+  firmado_jercol: 'bg-verde/12 text-verde-oscuro',
   vigente: 'bg-exito-fondo text-exito',
   anulado: 'bg-alerta-fondo text-alerta',
 };
@@ -58,7 +58,7 @@ export default async function ContractsPage() {
         <h1 className="text-xl font-semibold mb-6">Contratos</h1>
 
       {isAdmin && (
-        <details className="bg-tarjeta border border-borde rounded-lg p-4 mb-8">
+        <details className="bg-tarjeta border border-borde rounded-xl p-4 mb-8">
           <summary className="text-sm font-semibold text-tinta-suave uppercase tracking-wide cursor-pointer">
             Nuevo contrato
           </summary>

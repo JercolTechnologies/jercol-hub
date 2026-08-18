@@ -100,7 +100,7 @@ export default async function EquipoPage({
             {activos.map((m) => (
               <div
                 key={m.id}
-                className="flex flex-wrap items-center gap-3 border border-borde rounded-lg px-4 py-3"
+                className="flex flex-wrap items-center gap-3 border border-borde rounded-lg bg-elevado px-4 py-3"
               >
                 <div className="flex-1 min-w-[12rem] text-sm">
                   <div className="font-medium flex items-center gap-2 flex-wrap">
@@ -131,7 +131,7 @@ export default async function EquipoPage({
         <Aviso tipo="info">
           Para que alguien más de tu organización entre, dile que cree su cuenta en Jercol Hub y
           elija <b>&ldquo;Me uno a una ya registrada&rdquo;</b> con el NIT
-          {cliente?.tax_id ? ` ${cliente.tax_id}` : ''}. Su solicitud te llegará aquí.
+          {cliente?.tax_id ? <span className="font-mono tracking-tight"> {cliente.tax_id}</span> : null}. Su solicitud te llegará aquí.
         </Aviso>
       </div>
     </>

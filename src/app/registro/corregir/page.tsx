@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation';
+import Aviso from '@/components/Aviso';
 import FileField from '@/components/FileField';
+import Logo from '@/components/Logo';
 import { createClient } from '@/lib/supabase/server';
 import type { ClientRow, Profile } from '@/lib/types';
 import { reenviarDocumentos } from './actions';
@@ -38,23 +40,23 @@ export default async function CorregirPage({
   return (
     <div className="flex flex-1 justify-center px-4 py-10">
       <div className="w-full max-w-lg">
+        <div className="mb-6">
+          <Logo tamano="lg" />
+        </div>
+
         <h1 className="text-xl font-semibold mb-1">Corregir el registro</h1>
         <p className="text-sm text-tinta-suave mb-4">{cliente.name}</p>
 
-        <div className="text-sm bg-aviso-fondo text-aviso rounded px-3 py-3 mb-6">
-          <div className="font-medium mb-1">Motivo del rechazo</div>
+        <Aviso tipo="aviso" className="mb-5">
+          <span className="block font-medium mb-1">Motivo del rechazo</span>
           {cliente.rejection_reason || 'No se indicó un motivo.'}
-        </div>
+        </Aviso>
 
-        {error && (
-          <div className="mb-4 text-sm text-alerta bg-alerta-fondo border border-alerta/20 rounded px-3 py-2">
-            {error}
-          </div>
-        )}
+        {error && <Aviso className="mb-4">{error}</Aviso>}
 
         <form
           action={reenviarDocumentos}
-          className="bg-tarjeta border border-borde rounded-lg p-5 space-y-4"
+          className="bg-tarjeta border border-borde rounded-xl p-5 sm:p-6 space-y-4"
         >
           <p className="text-sm text-tinta-suave">
             Adjunta solo lo que haga falta corregir. Los documentos anteriores se conservan.
